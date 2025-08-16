@@ -77,3 +77,48 @@ export interface StockResponse {
 export interface StockFormData {
   symbol: string;
 }
+
+// New types for stock screening
+export interface ScreeningResult {
+  symbol: string;
+  name: string;
+  sector: string;
+  score: number;
+  rating: 'STRONG BUY' | 'BUY' | 'WEAK BUY' | 'HOLD' | 'AVOID';
+  price: number;
+  changePercent: number;
+  marketCap: number;
+  peRatio: number | null;
+  week52High: number | null;
+  distanceFrom52High: string | null;
+  scoreBreakdown: {
+    momentum: number;
+    quality: number;
+    technical: number;
+  };
+  rank?: number;
+}
+
+export interface ScreeningSummary {
+  totalScreened: number;
+  averageScore: number;
+  strongBuys: number;
+  buys: number;
+  topSector: string;
+}
+
+export interface ScreeningResponse {
+  success: boolean;
+  timestamp: string;
+  summary: ScreeningSummary;
+  results: ScreeningResult[];
+  error?: string;
+}
+
+export interface ScreeningFormData {
+  batchSize?: number;
+  startIndex?: number;
+  type?: 'momentum' | 'conservative' | 'aggressive';
+  sector?: string;
+  marketCap?: 'Large' | 'Mid' | 'Small' | 'All';
+}

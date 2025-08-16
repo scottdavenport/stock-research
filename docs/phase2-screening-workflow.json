@@ -1,0 +1,294 @@
+{
+  "name": "Stock Screening System - Phase 2",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "screen-stocks",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "id": "webhook-trigger",
+      "name": "Screening Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ],
+      "webhookId": "screen-stocks"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Stock universe - expandable list of high-quality momentum candidates\nconst stockUniverse = [\n  // Technology Leaders\n  \"AAPL\", \"MSFT\", \"GOOGL\", \"AMZN\", \"TSLA\", \"META\", \"NVDA\", \"AMD\", \"CRM\", \"ADBE\",\n  \"PYPL\", \"INTC\", \"QCOM\", \"AVGO\", \"TXN\", \"ORCL\", \"IBM\", \"CSCO\", \"NOW\", \"SNOW\",\n  \"UBER\", \"ABNB\", \"SPOT\", \"SQ\", \"SHOP\", \"PLTR\", \"NET\", \"DDOG\", \"ZM\", \"ROKU\",\n  \n  // Financial Services\n  \"JPM\", \"BAC\", \"WFC\", \"GS\", \"MS\", \"V\", \"MA\", \"AXP\", \"SCHW\", \"BLK\",\n  \"SPGI\", \"ICE\", \"CME\", \"COF\", \"PNC\",\n  \n  // Healthcare & Biotech\n  \"JNJ\", \"PFE\", \"UNH\", \"ABBV\", \"TMO\", \"ABT\", \"CVS\", \"LLY\", \"MRK\", \"GILD\",\n  \"AMGN\", \"BIIB\", \"REGN\", \"VRTX\", \"MRNA\",\n  \n  // Consumer & Retail\n  \"WMT\", \"COST\", \"TGT\", \"HD\", \"LOW\", \"MCD\", \"SBUX\", \"NKE\", \"DIS\", \"NFLX\",\n  \"KO\", \"PEP\", \"PG\", \"CL\", \"MDLZ\",\n  \n  // Energy & Industrials\n  \"XOM\", \"CVX\", \"COP\", \"EOG\", \"SLB\", \"BA\", \"CAT\", \"GE\", \"HON\", \"UPS\",\n  \"FDX\", \"LMT\", \"RTX\", \"NOC\", \"DE\",\n  \n  // ETFs for market comparison\n  \"SPY\", \"QQQ\", \"IWM\", \"DIA\", \"VOO\"\n];\n\n// Get screening parameters from request\nconst requestBody = $json.body || {};\nconst batchSize = requestBody.batchSize || 20;\nconst startIndex = requestBody.startIndex || 0;\nconst screeningType = requestBody.type || \"momentum\";\n\n// Get the batch of stocks to process\nconst endIndex = Math.min(startIndex + batchSize, stockUniverse.length);\nconst currentBatch = stockUniverse.slice(startIndex, endIndex);\n\nconsole.log(`Processing batch: ${Math.floor(startIndex/batchSize) + 1}`);\nconsole.log(`Stocks in batch: ${currentBatch.length}`);\n\n// Return each stock as a separate item for parallel processing\nconst batchItems = currentBatch.map(symbol => ({\n  symbol: symbol,\n  batchInfo: {\n    batchSize: batchSize,\n    startIndex: startIndex,\n    endIndex: endIndex,\n    currentBatch: Math.floor(startIndex/batchSize) + 1,\n    totalStocks: stockUniverse.length,\n    totalBatches: Math.ceil(stockUniverse.length / batchSize),\n    isLastBatch: endIndex >= stockUniverse.length,\n    screeningType: screeningType\n  }\n}));\n\nreturn batchItems;"
+      },
+      "id": "prepare-batch",
+      "name": "Prepare Stock Batch",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        450,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://finnhub.io/api/v1/quote",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "symbol",
+              "value": "={{ $json.symbol }}"
+            },
+            {
+              "name": "token",
+              "value": "={{ $vars.FINNHUB_API_KEY }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "fetch-quote",
+      "name": "Fetch Quote",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        650,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://finnhub.io/api/v1/stock/profile2",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "symbol",
+              "value": "={{ $json.symbol }}"
+            },
+            {
+              "name": "token",
+              "value": "={{ $vars.FINNHUB_API_KEY }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "fetch-profile",
+      "name": "Fetch Profile",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        650,
+        350
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://finnhub.io/api/v1/stock/metric",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "symbol",
+              "value": "={{ $json.symbol }}"
+            },
+            {
+              "name": "metric",
+              "value": "all"
+            },
+            {
+              "name": "token",
+              "value": "={{ $vars.FINNHUB_API_KEY }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "fetch-metrics",
+      "name": "Fetch Metrics",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        650,
+        500
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "mergeByPosition"
+      },
+      "id": "merge-data",
+      "name": "Merge API Data",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [
+        850,
+        350
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Advanced Scoring Algorithm\nconst allData = $json;\nconst symbol = allData.symbol || allData.ticker || \"UNKNOWN\";\n\n// Extract data\nconst currentPrice = allData.c || 0;\nconst changePercent = allData.dp || 0;\nconst dayHigh = allData.h || 0;\nconst dayLow = allData.l || 0;\nconst openPrice = allData.o || 0;\nconst previousClose = allData.pc || 0;\n\nconst companyName = allData.name || symbol;\nconst sector = allData.finnhubIndustry || \"Unknown\";\nconst marketCap = allData.marketCapitalization || 0;\n\nconst metrics = allData.metric || {};\nconst peRatio = metrics.peBasicExclExtraTTM || null;\nconst beta = metrics.beta || null;\nconst week52High = metrics['52WeekHigh'] || null;\nconst week52Low = metrics['52WeekLow'] || null;\n\n// Initialize scores\nlet momentumScore = 0;\nlet qualityScore = 0;\nlet technicalScore = 0;\n\n// MOMENTUM SCORING (40 points max)\nif (currentPrice > 0) {\n  // Daily move\n  if (changePercent > 5) momentumScore += 15;\n  else if (changePercent > 3) momentumScore += 12;\n  else if (changePercent > 1) momentumScore += 8;\n  else if (changePercent > 0) momentumScore += 4;\n  \n  // 52-week position\n  if (week52High) {\n    const dist = (currentPrice / week52High) * 100;\n    if (dist > 95) momentumScore += 25;\n    else if (dist > 90) momentumScore += 20;\n    else if (dist > 80) momentumScore += 15;\n    else if (dist > 70) momentumScore += 10;\n  }\n}\n\n// QUALITY SCORING (30 points max)\nif (marketCap > 10000) qualityScore += 15;\nelse if (marketCap > 1000) qualityScore += 12;\nelse if (marketCap > 100) qualityScore += 8;\n\nif (peRatio && peRatio > 0 && peRatio < 30) qualityScore += 15;\nelse if (peRatio && peRatio < 50) qualityScore += 10;\n\n// TECHNICAL SCORING (30 points max)\nif (currentPrice > openPrice) technicalScore += 15;\nif (dayHigh > dayLow && currentPrice > 0) {\n  const rangePos = (currentPrice - dayLow) / (dayHigh - dayLow);\n  if (rangePos > 0.8) technicalScore += 15;\n  else if (rangePos > 0.6) technicalScore += 10;\n  else if (rangePos > 0.4) technicalScore += 5;\n}\n\n// Calculate total score\nconst totalScore = Math.min(100, momentumScore + qualityScore + technicalScore);\n\n// Determine rating\nlet rating = totalScore >= 85 ? 'STRONG BUY' :\n             totalScore >= 70 ? 'BUY' :\n             totalScore >= 55 ? 'WEAK BUY' :\n             totalScore >= 40 ? 'HOLD' : 'AVOID';\n\nreturn {\n  symbol: symbol,\n  name: companyName,\n  sector: sector,\n  score: totalScore,\n  rating: rating,\n  price: currentPrice,\n  changePercent: changePercent,\n  marketCap: marketCap,\n  peRatio: peRatio,\n  week52High: week52High,\n  distanceFrom52High: week52High ? ((currentPrice / week52High) * 100).toFixed(1) : null,\n  scoreBreakdown: {\n    momentum: momentumScore,\n    quality: qualityScore,\n    technical: technicalScore\n  }\n};"
+      },
+      "id": "calculate-score",
+      "name": "Calculate Score",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1050,
+        350
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Aggregate all results\nconst items = $input.all();\nconst results = items.map(item => item.json);\n\n// Sort by score\nresults.sort((a, b) => b.score - a.score);\n\n// Add rankings\nresults.forEach((result, index) => {\n  result.rank = index + 1;\n});\n\n// Calculate summary\nconst summary = {\n  totalScreened: results.length,\n  averageScore: results.reduce((sum, r) => sum + r.score, 0) / results.length,\n  strongBuys: results.filter(r => r.rating === 'STRONG BUY').length,\n  buys: results.filter(r => r.rating === 'BUY').length,\n  topSector: results[0]?.sector || 'N/A'\n};\n\nreturn {\n  success: true,\n  timestamp: new Date().toISOString(),\n  summary: summary,\n  results: results.slice(0, 20) // Top 20\n};"
+      },
+      "id": "aggregate-results",
+      "name": "Aggregate Results",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1250,
+        350
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "id": "success-response",
+      "name": "Success Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1450,
+        350
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Screening Trigger": {
+      "main": [
+        [
+          {
+            "node": "Prepare Stock Batch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Stock Batch": {
+      "main": [
+        [
+          {
+            "node": "Fetch Quote",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch Profile",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch Metrics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Quote": {
+      "main": [
+        [
+          {
+            "node": "Merge API Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Profile": {
+      "main": [
+        [
+          {
+            "node": "Merge API Data",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Fetch Metrics": {
+      "main": [
+        [
+          {
+            "node": "Merge API Data",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Merge API Data": {
+      "main": [
+        [
+          {
+            "node": "Calculate Score",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate Score": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Results": {
+      "main": [
+        [
+          {
+            "node": "Success Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1.0.0",
+  "meta": {
+    "instanceId": "StockScreeningPhase2"
+  },
+  "id": "StockScreeningPhase2",
+  "tags": []
+}

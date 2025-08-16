@@ -1,32 +1,32 @@
 'use client';
 
 import { useState } from 'react';
-import StockForm from '../components/StockForm';
-import StockReport from '../components/StockReport';
-import LoadingSpinner from '../components/LoadingSpinner';
-import { StockFormData, StockData, StockResponse } from '../types/stock';
-import { researchStock } from '../utils/api';
+import ScreeningForm from '../../components/ScreeningForm';
+import ScreeningResults from '../../components/ScreeningResults';
+import LoadingSpinner from '../../components/LoadingSpinner';
+import { ScreeningFormData, ScreeningResponse } from '../../types/stock';
+import { screenStocks } from '../../utils/api';
 
-export default function Home() {
+export default function ScreeningPage() {
   const [isLoading, setIsLoading] = useState(false);
-  const [stockData, setStockData] = useState<StockData | null>(null);
+  const [screeningData, setScreeningData] = useState<ScreeningResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async (formData: StockFormData) => {
+  const handleSubmit = async (formData: ScreeningFormData) => {
     setIsLoading(true);
     setError(null);
-    setStockData(null);
+    setScreeningData(null);
 
     try {
-      const response = await researchStock(formData);
+      const response = await screenStocks(formData);
 
-      if (response.success && response.data) {
-        setStockData(response.data);
+      if (response.success) {
+        setScreeningData(response);
       } else {
-        setError(response.error || 'Failed to fetch stock data');
+        setError(response.error || 'Failed to screen stocks');
       }
     } catch (err) {
-      setError('An error occurred while researching the stock. Please try again.');
+      setError('An error occurred while screening stocks. Please try again.');
       console.error('Error:', err);
     } finally {
       setIsLoading(false);
@@ -39,34 +39,31 @@ export default function Home() {
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-white mb-4">
-            Stock Research
+            Stock Screener
           </h1>
           <p className="text-gray-400 text-lg max-w-4xl mx-auto">
-            Enter any stock symbol to get comprehensive research data including real-time quotes, 
-            company profiles with logos, financial metrics (P/E ratio, beta), 52-week ranges, 
-            and recent news with summaries from Finnhub API.
+            Automatically screen 500+ high-quality stocks to find the best momentum opportunities. 
+            Our intelligent algorithm scores stocks based on technical momentum, fundamental quality, 
+            and market catalysts to identify high-potential candidates.
           </p>
-          <div className="mt-4">
-            <a 
-              href="/screening" 
-              className="inline-flex items-center px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors"
-            >
-              🚀 Try our Stock Screener
-            </a>
-          </div>
         </div>
 
         {/* Main Content */}
         <div className="max-w-7xl mx-auto">
           {/* Form Section */}
           <div className="mb-8">
-            <StockForm onSubmit={handleSubmit} isLoading={isLoading} />
+            <ScreeningForm onSubmit={handleSubmit} isLoading={isLoading} />
           </div>
 
           {/* Loading State */}
           {isLoading && (
             <div className="mt-8">
-              <LoadingSpinner />
+              <div className="text-center">
+                <LoadingSpinner />
+                <p className="text-gray-400 mt-4">
+                  Screening stocks... This typically takes 30 seconds or less.
+                </p>
+              </div>
             </div>
           )}
 
@@ -84,16 +81,16 @@ export default function Home() {
           )}
 
           {/* Results Section */}
-          {stockData && !isLoading && (
+          {screeningData && !isLoading && (
             <div className="mt-8">
-              <StockReport data={stockData} />
+              <ScreeningResults data={screeningData} />
             </div>
           )}
         </div>
 
         {/* Footer */}
         <div className="mt-16 text-center text-gray-500 text-sm">
-          <p>Powered by Finnhub API • Enhanced with comprehensive financial data and analysis</p>
+          <p>Powered by Finnhub API • Intelligent screening algorithm for momentum opportunities</p>
         </div>
       </div>
     </div>

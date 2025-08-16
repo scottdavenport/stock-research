@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const N8N_WEBHOOK_URL = process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL_RESEARCHER || 'https://thinkcode.app.n8n.cloud/webhook-test/stock-research';
+const N8N_WEBHOOK_URL = process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL_SCREENER || 'https://thinkcode.app.n8n.cloud/webhook-test/screen-stocks';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     
-    console.log('Proxying request to n8n:', N8N_WEBHOOK_URL);
-    console.log('Request body:', body);
+    console.log('Proxying screening request to n8n:', N8N_WEBHOOK_URL);
+    console.log('Screening request body:', body);
 
     const response = await fetch(N8N_WEBHOOK_URL, {
       method: 'POST',
@@ -19,13 +19,13 @@ export async function POST(request: NextRequest) {
 
     const data = await response.json();
     
-    console.log('n8n response:', data);
+    console.log('n8n screening response:', data);
 
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Proxy error:', error);
+    console.error('Screening proxy error:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to fetch stock data' },
+      { success: false, error: 'Failed to screen stocks' },
       { status: 500 }
     );
   }

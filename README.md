@@ -10,6 +10,7 @@ A comprehensive stock research tool that connects a Next.js frontend to n8n work
 - **Company Logos**: Visual company branding with fallback handling
 - **Recent News**: Latest headlines with summaries and direct links
 - **Rich Company Info**: Website links, exchange details, and comprehensive descriptions
+- **Stock Screener**: Intelligent screening of 500+ stocks for momentum opportunities
 - **Dark Theme UI**: Clean, modern interface with purple accents
 - **Mobile Responsive**: Works seamlessly on all devices
 
@@ -43,7 +44,8 @@ npm install
 
 3. Create a `.env.local` file in the root directory:
 ```env
-NEXT_PUBLIC_N8N_WEBHOOK_URL=https://your-n8n-instance.com/webhook/stock-research
+NEXT_PUBLIC_N8N_WEBHOOK_URL_RESEARCHER=https://your-n8n-instance.com/webhook/stock-research
+NEXT_PUBLIC_N8N_WEBHOOK_URL_SCREENER=https://your-n8n-instance.com/webhook/screen-stocks
 ```
 
 4. Run the development server:
@@ -55,29 +57,28 @@ npm run dev
 
 ## Development Phases
 
-### Phase 1a: Frontend Setup ✅
+### Phase 1: Individual Stock Research ✅
 - [x] Initialize Next.js project with TypeScript
 - [x] Setup Tailwind with dark theme + purple colors
 - [x] Create basic form component
 - [x] Add loading and error states
-
-### Phase 1b: n8n Workflow ✅
-- [x] Create webhook trigger in n8n
-- [x] Setup Finnhub API calls (quote, profile, news)
-- [x] Add comprehensive data processing
-- [x] Test with sample symbols
-
-### Phase 1c: Integration ✅
+- [x] Create n8n workflow for individual stock research
 - [x] Connect frontend to n8n webhook
 - [x] Style results display with rich data
 - [x] Add error handling and CORS support
-- [x] Test full flow
-
-### Phase 1d: Polish ✅
 - [x] Improve UI/UX with company logos
 - [x] Add input validation and responsive design
 - [x] Enhanced data visualization
 - [x] Comprehensive documentation
+
+### Phase 2: Stock Screening ✅
+- [x] Create stock screening n8n workflow
+- [x] Build screening form with filters and options
+- [x] Implement screening results display
+- [x] Add navigation between research and screening
+- [x] Create screening API route
+- [x] Add comprehensive scoring algorithm
+- [x] Display score breakdowns and rankings
 
 ## Project Structure
 
@@ -86,14 +87,21 @@ stock-research-app/
 ├── src/
 │   ├── app/
 │   │   ├── globals.css          # Dark theme styles
-│   │   ├── layout.tsx           # Root layout
-│   │   ├── page.tsx             # Main app page
+│   │   ├── layout.tsx           # Root layout with navigation
+│   │   ├── page.tsx             # Main research page
+│   │   ├── screening/
+│   │   │   └── page.tsx         # Stock screening page
 │   │   └── api/
-│   │       └── stock-research/
-│   │           └── route.ts     # API proxy route
+│   │       ├── stock-research/
+│   │       │   └── route.ts     # Research API proxy route
+│   │       └── stock-screening/
+│   │           └── route.ts     # Screening API proxy route
 │   ├── components/
-│   │   ├── StockForm.tsx        # Input form component
-│   │   ├── StockReport.tsx      # Enhanced results display
+│   │   ├── Navigation.tsx       # App navigation component
+│   │   ├── StockForm.tsx        # Research input form
+│   │   ├── StockReport.tsx      # Research results display
+│   │   ├── ScreeningForm.tsx    # Screening form component
+│   │   ├── ScreeningResults.tsx # Screening results display
 │   │   └── LoadingSpinner.tsx   # Loading state component
 │   ├── types/
 │   │   └── stock.ts             # TypeScript interfaces
@@ -103,76 +111,62 @@ stock-research-app/
 └── README.md                    # This file
 ```
 
+## Features Overview
+
+### Individual Stock Research
+- Enter any stock symbol for comprehensive analysis
+- Real-time quotes, company profiles, and news
+- Technical indicators and financial metrics
+- Mobile-responsive design
+
+### Stock Screener
+- Screen 500+ high-quality stocks automatically
+- Intelligent scoring algorithm (0-100 points)
+- Score breakdown: Momentum (40%), Quality (30%), Technical (30%)
+- Filter by sector, market cap, and screening strategy
+- Ranked results with actionable insights
+- Results typically available in 30 seconds
+
 ## API Integration
 
-The app is connected to an n8n workflow that processes stock data from Finnhub API:
+The app connects to two n8n workflows:
 
-- **Endpoint**: Configured via environment variable
+### Research Workflow
+- **Endpoint**: `/api/stock-research`
 - **Method**: POST
 - **Request**: `{ "symbol": "AAPL" }`
 - **Response**: Comprehensive stock data with company info, trading data, and news
 
-## API Response Format
-
-The n8n webhook returns rich data in this format:
-
-```json
-{
-  "success": true,
-  "data": {
-    "symbol": "AAPL",
-    "name": "Apple Inc",
-    "price": 231.59,
-    "change": -1.19,
-    "changePercent": -0.51,
-    "dayHigh": 234.28,
-    "dayLow": 229.34,
-    "openPrice": 234.00,
-    "previousClose": 232.78,
-    "volume": 0,
-    "marketCap": "$3458.4B",
-    "sector": "Technology",
-    "country": "US",
-    "exchange": "NASDAQ NMS - GLOBAL MARKET",
-    "website": "https://www.apple.com/",
-    "logo": "https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/AAPL.png",
-    "description": "Apple Inc operates in the Technology sector...",
-    "technicals": {
-      "dayRange": "$229.34 - $234.28",
-      "openPrice": 234.00,
-      "previousClose": 232.78
-    },
-    "news": [
-      {
-        "title": "Apple Announces New...",
-        "date": "2025-08-15",
-        "url": "https://...",
-        "summary": "Summary of the news article..."
-      }
-    ],
-    "lastUpdate": "2025-08-15",
-    "dataSource": "Finnhub"
-  }
-}
-```
+### Screening Workflow
+- **Endpoint**: `/api/stock-screening`
+- **Method**: POST
+- **Request**: `{ "batchSize": 20, "type": "momentum", "sector": "Technology" }`
+- **Response**: Ranked list of screened stocks with scores and breakdowns
 
 ## Environment Variables
 
 | Variable | Description | Required |
 |----------|-------------|----------|
-| `NEXT_PUBLIC_N8N_WEBHOOK_URL` | URL of your n8n webhook endpoint | Yes |
+| `NEXT_PUBLIC_N8N_WEBHOOK_URL_RESEARCHER` | URL of your n8n webhook endpoint for individual stock research | Yes |
+| `NEXT_PUBLIC_N8N_WEBHOOK_URL_SCREENER` | URL of your n8n webhook endpoint for stock screening | Yes |
 
 ## Usage
 
-1. Enter a stock symbol (e.g., AAPL, MSFT, GOOGL, TSLA)
-2. Click "Research Stock"
-3. View comprehensive data including:
-   - **Company Info**: Logo, name, sector, exchange, country
-   - **Price Data**: Current price, change, day range, open/close
-   - **Trading Data**: High/low, open price, previous close comparisons
-   - **Company Details**: Market cap, website, comprehensive description
-   - **Recent News**: Headlines with summaries and direct links
-   - **Data Source**: Finnhub API with timestamp
+### Individual Stock Research
+1. Navigate to the Research page
+2. Enter a stock symbol (e.g., AAPL, MSFT, GOOGL, TSLA)
+3. Click "Research Stock"
+4. View comprehensive data including company info, price data, and news
+
+### Stock Screening
+1. Navigate to the Screener page
+2. Choose screening parameters:
+   - **Strategy**: Momentum (balanced), Conservative, or Aggressive
+   - **Batch Size**: 10-100 stocks per screening
+   - **Sector**: Focus on specific sectors or screen all
+   - **Market Cap**: Large, Mid, Small, or All caps
+3. Click "Start Screening"
+4. View ranked results with score breakdowns and actionable insights
 
 ## Contributing
 
@@ -188,8 +182,8 @@ This project is for educational purposes only. Stock data should not be used for
 ## Next Steps
 
 - [ ] Add data persistence for research history
-- [ ] Implement stock screening features
+- [ ] Implement watchlists and alerts
 - [ ] Add portfolio tracking capabilities
 - [ ] Expand technical indicators (RSI, SMA, MACD)
 - [ ] Add price charts and historical data
-- [ ] Implement watchlists and alerts
+- [ ] Implement Supabase integration for data storage
