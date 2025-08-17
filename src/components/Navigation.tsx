@@ -2,12 +2,18 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useAuth } from './AuthProvider';
 
 export default function Navigation() {
   const pathname = usePathname();
+  const { user, loading, signOut } = useAuth();
 
   const isActive = (path: string) => {
     return pathname === path;
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
   };
 
   return (
@@ -44,6 +50,36 @@ export default function Navigation() {
             >
               Screener
             </Link>
+            
+            {/* Auth Links */}
+            {!loading && (
+              <>
+                {user ? (
+                  <div className="flex items-center space-x-2 ml-4">
+                    <span className="text-gray-300 text-sm">
+                      {user.email}
+                    </span>
+                    <button
+                      onClick={handleSignOut}
+                      className="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-700 transition-colors"
+                    >
+                      Sign Out
+                    </button>
+                  </div>
+                ) : (
+                  <Link
+                    href="/login"
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      isActive('/login')
+                        ? 'bg-purple-600 text-white'
+                        : 'text-gray-300 hover:text-white hover:bg-gray-700'
+                    }`}
+                  >
+                    Sign In
+                  </Link>
+                )}
+              </>
+            )}
           </div>
         </div>
       </div>
