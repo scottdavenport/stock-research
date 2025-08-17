@@ -22,6 +22,10 @@ export default function ScreeningForm({ onSubmit, isLoading }: ScreeningFormProp
 
   // Calculate estimated time based on batch size (4.5 seconds per stock + 20 seconds buffer)
   const calculateEstimatedTime = (batchSize: number) => {
+    if (batchSize === 500) {
+      // Full screen: 500+ stocks, estimate 8-10 minutes
+      return 540; // 9 minutes (540 seconds)
+    }
     return Math.round(batchSize * 4.5) + 20;
   };
 
@@ -112,6 +116,7 @@ export default function ScreeningForm({ onSubmit, isLoading }: ScreeningFormProp
             <option value={20}>20 stocks</option>
             <option value={50}>50 stocks</option>
             <option value={100}>100 stocks</option>
+            <option value={500}>Full Screen (500+ stocks)</option>
           </select>
           <p className="text-sm text-gray-400 mt-1">
             Number of stocks to screen in this batch • Est. time: {formatTime(calculateEstimatedTime(formData.batchSize || 5))}
@@ -163,7 +168,7 @@ export default function ScreeningForm({ onSubmit, isLoading }: ScreeningFormProp
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:from-gray-600 disabled:to-gray-600 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-800"
+          className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:from-gray-600 disabled:to-gray-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-800"
         >
           {isLoading ? (
             <div className="flex items-center justify-center">
@@ -174,6 +179,23 @@ export default function ScreeningForm({ onSubmit, isLoading }: ScreeningFormProp
             'Start Screening'
           )}
         </button>
+
+        {/* Full Screen Warning */}
+        {formData.batchSize === 500 && !isLoading && (
+          <div className="mt-4 p-4 bg-orange-900/20 border border-orange-500 rounded-lg">
+            <div className="flex items-start">
+              <div className="text-orange-400 text-lg mr-3 mt-0.5">⚠️</div>
+              <div>
+                <h4 className="text-orange-400 font-semibold mb-1">Full Screen Mode</h4>
+                <p className="text-orange-300 text-sm">
+                  This will screen 500+ stocks and may take 8-10 minutes to complete. 
+                  Please ensure you have time to wait for results. You can leave this page 
+                  open and return later to check progress.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Loading Progress */}
         {isLoading && (
@@ -196,7 +218,23 @@ export default function ScreeningForm({ onSubmit, isLoading }: ScreeningFormProp
             
             {/* Progress Text */}
             <div className="text-center text-sm text-gray-300">
-              Screening {formData.batchSize} stocks... This may take up to {formatTime(calculateEstimatedTime(formData.batchSize || 5))}
+              {formData.batchSize === 500 ? (
+                <>
+                  Screening 500+ stocks in Full Screen mode... This may take 8-10 minutes.
+                  <br />
+                  <span className="text-orange-400">Please be patient - this is a comprehensive analysis!</span>
+                  <br />
+                  <span className="text-blue-400 text-xs mt-1">Using polling to handle long-running process...</span>
+                </>
+              ) : formData.batchSize >= 100 ? (
+                <>
+                  Screening {formData.batchSize} stocks... This may take 3-5 minutes.
+                  <br />
+                  <span className="text-blue-400 text-xs mt-1">Using polling to handle long-running process...</span>
+                </>
+              ) : (
+                `Screening ${formData.batchSize} stocks... This may take up to ${formatTime(calculateEstimatedTime(formData.batchSize || 5))}`
+              )}
             </div>
           </div>
         )}
@@ -217,6 +255,7 @@ export default function ScreeningForm({ onSubmit, isLoading }: ScreeningFormProp
           <ul className="text-xs text-yellow-300 space-y-1">
             <li>• Start with 5-10 stocks for faster results</li>
             <li>• Larger batches (50-100) may take 2-3 minutes</li>
+            <li>• Full Screen (500+) may take 8-10 minutes - plan accordingly</li>
             <li>• If you get a timeout, try a smaller batch size</li>
           </ul>
         </div>

@@ -12,22 +12,28 @@ export default function ScreeningPage() {
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (formData: ScreeningFormData) => {
+    console.log('Starting screening submission:', formData);
     setIsLoading(true);
     setError(null);
     setScreeningData(null);
 
     try {
+      console.log('Calling screenStocks API...');
       const response = await screenStocks(formData);
+      console.log('Received screening response:', response);
 
       if (response.success) {
+        console.log('Screening successful, setting data...');
         setScreeningData(response);
       } else {
+        console.log('Screening failed:', response.error);
         setError(response.error || 'Failed to screen stocks');
       }
     } catch (err) {
+      console.error('Screening error:', err);
       setError('An error occurred while screening stocks. Please try again.');
-      console.error('Error:', err);
     } finally {
+      console.log('Screening submission completed, setting loading to false');
       setIsLoading(false);
     }
   };
@@ -68,14 +74,15 @@ export default function ScreeningPage() {
                   <h3 className="text-red-400 font-semibold mb-2">Screening Error</h3>
                   <p className="text-red-300 mb-4">{error}</p>
                   
-                  {/* Additional guidance for timeout errors */}
-                  {error.includes('timeout') || error.includes('524') && (
+                  {/* Additional guidance for timeout and cancellation errors */}
+                  {(error.includes('timeout') || error.includes('524') || error.includes('cancelled') || error.includes('cancellation')) && (
                     <div className="mb-4 p-3 bg-yellow-900/20 border border-yellow-600 rounded-lg">
                       <h4 className="text-sm font-semibold text-yellow-400 mb-1">Suggested Solutions:</h4>
                       <ul className="text-sm text-yellow-300 space-y-1">
                         <li>• Try a smaller batch size (10-20 stocks)</li>
                         <li>• Wait a few minutes and try again</li>
                         <li>• The workflow may still be processing in the background</li>
+                        <li>• For Full Screen mode, this is normal - the process takes 8-10 minutes</li>
                       </ul>
                     </div>
                   )}
