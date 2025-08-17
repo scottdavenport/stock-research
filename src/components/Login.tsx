@@ -27,7 +27,7 @@ export default function Login() {
         setMessage('Check your email for the login link!')
         setEmail('')
       }
-    } catch (error) {
+    } catch {
       setMessage('An error occurred. Please try again.')
     } finally {
       setLoading(false)

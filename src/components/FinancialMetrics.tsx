@@ -5,7 +5,7 @@ interface FinancialMetricsProps {
 }
 
 export default function FinancialMetrics({ data }: FinancialMetricsProps) {
-  const hasData = (value: any) => {
+  const hasData = (value: unknown) => {
     return value !== null && value !== undefined && value !== '' && value !== 'N/A';
   };
 
@@ -108,7 +108,7 @@ export default function FinancialMetrics({ data }: FinancialMetricsProps) {
               <div className="absolute bottom-full right-0 mb-2 w-64 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10">
                 <div className="font-semibold mb-1">Stock Volatility</div>
                 <div className="text-gray-300">
-                  Measures how much this stock's price moves compared to the overall market.
+                  Measures how much this stock&apos;s price moves compared to the overall market.
                   <br /><br />
                   <strong>Low (under 0.8):</strong> Less risky, moves slower than market
                   <br />
@@ -143,7 +143,7 @@ export default function FinancialMetrics({ data }: FinancialMetricsProps) {
                 <div className="text-gray-300">
                   Shows the highest and lowest prices this stock has traded at over the past year.
                   <br /><br />
-                  <strong>Current position:</strong> Where today's price falls within that range
+                  <strong>Current position:</strong> Where today&apos;s price falls within that range
                   <br />
                   <strong>Near high:</strong> Stock might be expensive
                   <br />
@@ -248,7 +248,7 @@ export default function FinancialMetrics({ data }: FinancialMetricsProps) {
                 How to Start Investing
               </div>
               <div className="text-xs text-gray-400">
-                NerdWallet - Beginner's Guide
+                NerdWallet - Beginner&apos;s Guide
               </div>
             </div>
           </a>
@@ -284,7 +284,7 @@ export default function FinancialMetrics({ data }: FinancialMetricsProps) {
             <div className="text-sm">
               <div className="text-yellow-400 font-medium mb-1">Important Disclaimer</div>
               <div className="text-yellow-300">
-                This information is for educational purposes only. Always do your own research and consider consulting with a financial advisor before making investment decisions. Past performance doesn't guarantee future results.
+                This information is for educational purposes only. Always do your own research and consider consulting with a financial advisor before making investment decisions. Past performance doesn&apos;t guarantee future results.
               </div>
             </div>
           </div>

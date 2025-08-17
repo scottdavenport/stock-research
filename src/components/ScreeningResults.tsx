@@ -1,6 +1,6 @@
 'use client';
 
-import { ScreeningResponse, ScreeningResult } from '../types/stock';
+import { ScreeningResponse } from '../types/stock';
 import { useRouter } from 'next/navigation';
 
 interface ScreeningResultsProps {

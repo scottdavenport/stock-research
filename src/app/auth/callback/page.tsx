@@ -33,7 +33,7 @@ export default function AuthCallback() {
           setMessage('No session found. Redirecting to login...')
           setTimeout(() => router.push('/login'), 2000)
         }
-      } catch (error) {
+      } catch {
         setMessage('An error occurred. Please try again.')
         setTimeout(() => router.push('/login'), 2000)
       }

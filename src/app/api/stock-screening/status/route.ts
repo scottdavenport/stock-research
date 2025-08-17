@@ -1,5 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+interface N8NStockData {
+  symbol: string;
+  name: string;
+  sector: string;
+  score: number;
+  rating: string;
+  price: number;
+  changePercent: number;
+  marketCap: number;
+  peRatio: number | null;
+  week52High: number | null;
+  distanceFrom52High: string | null;
+  scoreBreakdown?: {
+    momentum: number;
+    quality: number;
+    technical: number;
+  };
+}
+
 const N8N_WEBHOOK_URL = process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL_SCREENER || 'https://thinkcode.app.n8n.cloud/webhook-test/screen-stocks-sequential';
 const N8N_AUTH_TOKEN = process.env.NEXT_PUBLIC_N8N_WEBHOOK_STOCK_SCREENER_API_KEY;
 
@@ -64,7 +83,7 @@ export async function POST(request: NextRequest) {
               timestamp: new Date().toISOString()
             }, { status: 202 });
           }
-        } catch (parseError) {
+        } catch {
           // Continue with normal error handling
         }
       }
@@ -105,7 +124,7 @@ export async function POST(request: NextRequest) {
         buys: data.summary?.ratings?.buy || 0,
         topSector: data.summary?.topSector || 'N/A'
       },
-      results: data.results?.map((stock: any, index: number) => ({
+      results: data.results?.map((stock: N8NStockData, index: number) => ({
         rank: index + 1,
         symbol: stock.symbol,
         name: stock.name,

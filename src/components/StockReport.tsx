@@ -10,7 +10,7 @@ interface StockReportProps {
 }
 
 export default function StockReport({ data }: StockReportProps) {
-  const hasData = (value: any) => {
+  const hasData = (value: unknown) => {
     return value !== null && value !== undefined && value !== '' && value !== 'N/A';
   };
 

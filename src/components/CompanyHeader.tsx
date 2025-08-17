@@ -9,7 +9,7 @@ interface CompanyHeaderProps {
 export default function CompanyHeader({ data }: CompanyHeaderProps) {
   const [imageError, setImageError] = useState(false);
   
-  const hasData = (value: any) => {
+  const hasData = (value: unknown) => {
     return value !== null && value !== undefined && value !== '' && value !== 'N/A';
   };
 

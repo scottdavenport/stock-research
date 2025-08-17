@@ -60,7 +60,7 @@ export default function ScreeningForm({ onSubmit, isLoading }: ScreeningFormProp
     onSubmit(formData);
   };
 
-  const handleInputChange = (field: keyof ScreeningFormData, value: any) => {
+  const handleInputChange = (field: keyof ScreeningFormData, value: unknown) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -226,14 +226,14 @@ export default function ScreeningForm({ onSubmit, isLoading }: ScreeningFormProp
                   <br />
                   <span className="text-blue-400 text-xs mt-1">Using polling to handle long-running process...</span>
                 </>
-              ) : formData.batchSize >= 100 ? (
+              ) : (formData.batchSize || 0) >= 100 ? (
                 <>
-                  Screening {formData.batchSize} stocks... This may take 3-5 minutes.
+                  Screening {formData.batchSize || 0} stocks... This may take 3-5 minutes.
                   <br />
                   <span className="text-blue-400 text-xs mt-1">Using polling to handle long-running process...</span>
                 </>
               ) : (
-                `Screening ${formData.batchSize} stocks... This may take up to ${formatTime(calculateEstimatedTime(formData.batchSize || 5))}`
+                `Screening ${formData.batchSize || 0} stocks... This may take up to ${formatTime(calculateEstimatedTime(formData.batchSize || 5))}`
               )}
             </div>
           </div>

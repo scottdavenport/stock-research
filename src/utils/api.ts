@@ -160,9 +160,9 @@ async function pollScreeningStatus(formData: ScreeningFormData): Promise<Screeni
               console.log('n8n test mode limitation - continuing to poll...');
               continue;
             }
-          } catch (parseError) {
-            // Continue with normal error handling
-          }
+                  } catch {
+          // Continue with normal error handling
+        }
         }
         
         throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);

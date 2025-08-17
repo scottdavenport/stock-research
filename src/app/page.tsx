@@ -1,16 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import StockForm from '../components/StockForm';
 import StockReport from '../components/StockReport';
 import LoadingSpinner from '../components/LoadingSpinner';
-import { StockFormData, StockData, StockResponse } from '../types/stock';
+import { StockFormData, StockData } from '../types/stock';
 import { researchStock } from '../utils/api';
 import { useAuth } from '../components/AuthProvider';
 import AuthGuard from '../components/AuthGuard';
 
-export default function Home() {
+function HomeContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [stockData, setStockData] = useState<StockData | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -153,5 +153,20 @@ export default function Home() {
         </div>
       </div>
     </AuthGuard>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <p className="text-gray-400">Loading...</p>
+        </div>
+      </div>
+    }>
+      <HomeContent />
+    </Suspense>
   );
 }

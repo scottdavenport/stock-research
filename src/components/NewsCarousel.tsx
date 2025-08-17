@@ -5,7 +5,7 @@ interface NewsCarouselProps {
 }
 
 export default function NewsCarousel({ data }: NewsCarouselProps) {
-  const hasData = (value: any) => {
+  const hasData = (value: unknown) => {
     return value !== null && value !== undefined && value !== '' && value !== 'N/A';
   };
 
