@@ -1,12 +1,15 @@
 'use client';
 
 import { ScreeningResponse, ScreeningResult } from '../types/stock';
+import { useRouter } from 'next/navigation';
 
 interface ScreeningResultsProps {
   data: ScreeningResponse;
 }
 
 export default function ScreeningResults({ data }: ScreeningResultsProps) {
+  const router = useRouter();
+
   const formatMarketCap = (marketCap: number) => {
     if (marketCap >= 1000000000000) {
       return `$${(marketCap / 1000000000000).toFixed(1)}T`;
@@ -43,6 +46,11 @@ export default function ScreeningResults({ data }: ScreeningResultsProps) {
     if (rank === 2) return 'bg-gradient-to-r from-gray-400 to-gray-500 text-gray-900';
     if (rank === 3) return 'bg-gradient-to-r from-orange-500 to-orange-600 text-orange-900';
     return 'bg-gradient-to-r from-purple-500 to-purple-600 text-white';
+  };
+
+  const handleResearchStock = (symbol: string) => {
+    // Navigate to research page with symbol as URL parameter
+    router.push(`/?symbol=${encodeURIComponent(symbol)}`);
   };
 
   return (
@@ -164,7 +172,7 @@ export default function ScreeningResults({ data }: ScreeningResultsProps) {
               </div>
 
               {/* Additional Metrics */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
                 <div>
                   <span className="text-gray-400">P/E Ratio:</span>
                   <span className="text-white ml-1">
@@ -189,6 +197,17 @@ export default function ScreeningResults({ data }: ScreeningResultsProps) {
                     {formatMarketCap(stock.marketCap)}
                   </span>
                 </div>
+              </div>
+
+              {/* Research Button */}
+              <div className="flex justify-end">
+                <button
+                  onClick={() => handleResearchStock(stock.symbol)}
+                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2"
+                >
+                  <span>🔍</span>
+                  Research {stock.symbol}
+                </button>
               </div>
             </div>
           ))}

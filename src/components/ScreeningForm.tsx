@@ -10,7 +10,7 @@ interface ScreeningFormProps {
 
 export default function ScreeningForm({ onSubmit, isLoading }: ScreeningFormProps) {
   const [formData, setFormData] = useState<ScreeningFormData>({
-    batchSize: 20,
+    batchSize: 5,
     startIndex: 0,
     type: 'momentum',
     sector: 'All',
@@ -20,9 +20,9 @@ export default function ScreeningForm({ onSubmit, isLoading }: ScreeningFormProp
   const [elapsedTime, setElapsedTime] = useState(0);
   const [estimatedRemaining, setEstimatedRemaining] = useState(0);
 
-  // Calculate estimated time based on batch size (4.5 seconds per stock)
+  // Calculate estimated time based on batch size (4.5 seconds per stock + 20 seconds buffer)
   const calculateEstimatedTime = (batchSize: number) => {
-    return Math.round(batchSize * 4.5);
+    return Math.round(batchSize * 4.5) + 20;
   };
 
   // Timer effect for loading state
@@ -31,12 +31,12 @@ export default function ScreeningForm({ onSubmit, isLoading }: ScreeningFormProp
     
     if (isLoading) {
       setElapsedTime(0);
-      setEstimatedRemaining(calculateEstimatedTime(formData.batchSize || 20));
+      setEstimatedRemaining(calculateEstimatedTime(formData.batchSize || 5));
       
       interval = setInterval(() => {
         setElapsedTime(prev => {
           const newElapsed = prev + 1;
-          const totalEstimated = calculateEstimatedTime(formData.batchSize || 20);
+          const totalEstimated = calculateEstimatedTime(formData.batchSize || 5);
           setEstimatedRemaining(Math.max(0, totalEstimated - newElapsed));
           return newElapsed;
         });
@@ -107,13 +107,14 @@ export default function ScreeningForm({ onSubmit, isLoading }: ScreeningFormProp
             className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
             disabled={isLoading}
           >
+            <option value={5}>5 stocks</option>
             <option value={10}>10 stocks</option>
             <option value={20}>20 stocks</option>
             <option value={50}>50 stocks</option>
             <option value={100}>100 stocks</option>
           </select>
           <p className="text-sm text-gray-400 mt-1">
-            Number of stocks to screen in this batch • Est. time: {formatTime(calculateEstimatedTime(formData.batchSize || 20))}
+            Number of stocks to screen in this batch • Est. time: {formatTime(calculateEstimatedTime(formData.batchSize || 5))}
           </p>
         </div>
 
@@ -182,7 +183,7 @@ export default function ScreeningForm({ onSubmit, isLoading }: ScreeningFormProp
               <div 
                 className="bg-gradient-to-r from-purple-500 to-blue-500 h-2 rounded-full transition-all duration-1000"
                 style={{ 
-                  width: `${Math.min(100, (elapsedTime / calculateEstimatedTime(formData.batchSize || 20)) * 100)}%` 
+                  width: `${Math.min(100, (elapsedTime / calculateEstimatedTime(formData.batchSize || 5)) * 100)}%` 
                 }}
               ></div>
             </div>
@@ -195,7 +196,7 @@ export default function ScreeningForm({ onSubmit, isLoading }: ScreeningFormProp
             
             {/* Progress Text */}
             <div className="text-center text-sm text-gray-300">
-              Screening {formData.batchSize} stocks... This may take up to {formatTime(calculateEstimatedTime(formData.batchSize || 20))}
+              Screening {formData.batchSize} stocks... This may take up to {formatTime(calculateEstimatedTime(formData.batchSize || 5))}
             </div>
           </div>
         )}
@@ -214,7 +215,7 @@ export default function ScreeningForm({ onSubmit, isLoading }: ScreeningFormProp
         <div className="mt-4 p-3 bg-yellow-900/20 border border-yellow-600 rounded-lg">
           <h4 className="text-sm font-semibold text-yellow-400 mb-1">Performance Tips:</h4>
           <ul className="text-xs text-yellow-300 space-y-1">
-            <li>• Start with 10-20 stocks for faster results</li>
+            <li>• Start with 5-10 stocks for faster results</li>
             <li>• Larger batches (50-100) may take 2-3 minutes</li>
             <li>• If you get a timeout, try a smaller batch size</li>
           </ul>

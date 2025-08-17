@@ -1,16 +1,24 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { StockFormData } from '../types/stock';
 
 interface StockFormProps {
   onSubmit: (data: StockFormData) => void;
   isLoading: boolean;
+  initialSymbol?: string;
 }
 
-export default function StockForm({ onSubmit, isLoading }: StockFormProps) {
+export default function StockForm({ onSubmit, isLoading, initialSymbol }: StockFormProps) {
   const [symbol, setSymbol] = useState('');
   const [error, setError] = useState('');
+
+  // Set initial symbol if provided
+  useEffect(() => {
+    if (initialSymbol) {
+      setSymbol(initialSymbol.toUpperCase());
+    }
+  }, [initialSymbol]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

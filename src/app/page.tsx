@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import StockForm from '../components/StockForm';
 import StockReport from '../components/StockReport';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -11,6 +12,9 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [stockData, setStockData] = useState<StockData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [autoSubmitted, setAutoSubmitted] = useState(false);
+  
+  const searchParams = useSearchParams();
 
   const handleSubmit = async (formData: StockFormData) => {
     setIsLoading(true);
@@ -32,6 +36,27 @@ export default function Home() {
       setIsLoading(false);
     }
   };
+
+  // Handle URL parameter for auto-submission
+  useEffect(() => {
+    const symbolParam = searchParams.get('symbol');
+    if (symbolParam && !autoSubmitted) {
+      const trimmedSymbol = symbolParam.trim().toUpperCase();
+      if (trimmedSymbol && trimmedSymbol.length <= 5) {
+        setAutoSubmitted(true);
+        // Scroll to top when auto-researching
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        handleSubmit({ symbol: trimmedSymbol });
+      }
+    }
+  }, [searchParams, autoSubmitted]);
+
+  // Scroll to top when component mounts (for auto-research)
+  useEffect(() => {
+    if (searchParams.get('symbol')) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [searchParams]);
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
@@ -60,7 +85,11 @@ export default function Home() {
         <div className="max-w-7xl mx-auto">
           {/* Form Section */}
           <div className="mb-8">
-            <StockForm onSubmit={handleSubmit} isLoading={isLoading} />
+            <StockForm 
+              onSubmit={handleSubmit} 
+              isLoading={isLoading} 
+              initialSymbol={searchParams.get('symbol') || undefined}
+            />
           </div>
 
           {/* Loading State */}
@@ -86,6 +115,21 @@ export default function Home() {
           {/* Results Section */}
           {stockData && !isLoading && (
             <div className="mt-8">
+              {/* Auto-research notification */}
+              {autoSubmitted && (
+                <div className="mb-4 bg-blue-900/20 border border-blue-500 rounded-lg p-4">
+                  <div className="flex items-center">
+                    <div className="text-blue-400 text-lg mr-3">🔍</div>
+                    <div>
+                      <h3 className="text-blue-400 font-semibold">Auto-Research</h3>
+                      <p className="text-blue-300">
+                        Automatically researched {stockData.symbol} from the stock screener
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
               <StockReport data={stockData} />
             </div>
           )}
