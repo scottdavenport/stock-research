@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ScreeningFormData } from '../types/stock';
 
 interface ScreeningFormProps {
@@ -17,6 +17,40 @@ export default function ScreeningForm({ onSubmit, isLoading }: ScreeningFormProp
     marketCap: 'All'
   });
 
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const [estimatedRemaining, setEstimatedRemaining] = useState(0);
+
+  // Calculate estimated time based on batch size (4.5 seconds per stock)
+  const calculateEstimatedTime = (batchSize: number) => {
+    return Math.round(batchSize * 4.5);
+  };
+
+  // Timer effect for loading state
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    
+    if (isLoading) {
+      setElapsedTime(0);
+      setEstimatedRemaining(calculateEstimatedTime(formData.batchSize || 20));
+      
+      interval = setInterval(() => {
+        setElapsedTime(prev => {
+          const newElapsed = prev + 1;
+          const totalEstimated = calculateEstimatedTime(formData.batchSize || 20);
+          setEstimatedRemaining(Math.max(0, totalEstimated - newElapsed));
+          return newElapsed;
+        });
+      }, 1000);
+    } else {
+      setElapsedTime(0);
+      setEstimatedRemaining(0);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isLoading, formData.batchSize]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit(formData);
@@ -27,6 +61,12 @@ export default function ScreeningForm({ onSubmit, isLoading }: ScreeningFormProp
       ...prev,
       [field]: value
     }));
+  };
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
   };
 
   return (
@@ -73,7 +113,7 @@ export default function ScreeningForm({ onSubmit, isLoading }: ScreeningFormProp
             <option value={100}>100 stocks</option>
           </select>
           <p className="text-sm text-gray-400 mt-1">
-            Number of stocks to screen in this batch
+            Number of stocks to screen in this batch • Est. time: {formatTime(calculateEstimatedTime(formData.batchSize || 20))}
           </p>
         </div>
 
@@ -127,12 +167,38 @@ export default function ScreeningForm({ onSubmit, isLoading }: ScreeningFormProp
           {isLoading ? (
             <div className="flex items-center justify-center">
               <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-              Screening Stocks...
+              Screening in Progress...
             </div>
           ) : (
             'Start Screening'
           )}
         </button>
+
+        {/* Loading Progress */}
+        {isLoading && (
+          <div className="mt-4 space-y-3">
+            {/* Progress Bar */}
+            <div className="w-full bg-gray-700 rounded-full h-2">
+              <div 
+                className="bg-gradient-to-r from-purple-500 to-blue-500 h-2 rounded-full transition-all duration-1000"
+                style={{ 
+                  width: `${Math.min(100, (elapsedTime / calculateEstimatedTime(formData.batchSize || 20)) * 100)}%` 
+                }}
+              ></div>
+            </div>
+            
+            {/* Time Indicators */}
+            <div className="flex justify-between text-sm text-gray-400">
+              <span>Elapsed: {formatTime(elapsedTime)}</span>
+              <span>Est. remaining: {formatTime(estimatedRemaining)}</span>
+            </div>
+            
+            {/* Progress Text */}
+            <div className="text-center text-sm text-gray-300">
+              Screening {formData.batchSize} stocks... This may take up to {formatTime(calculateEstimatedTime(formData.batchSize || 20))}
+            </div>
+          </div>
+        )}
       </form>
 
       {/* Info Box */}
@@ -142,8 +208,17 @@ export default function ScreeningForm({ onSubmit, isLoading }: ScreeningFormProp
           <li>• Screens 500+ high-quality stocks using momentum + fundamental criteria</li>
           <li>• Scores each stock (0-100) based on technical, quality, and catalyst factors</li>
           <li>• Returns top-ranked opportunities with actionable insights</li>
-          <li>• Results typically available in 30 seconds or less</li>
+          <li>• Results typically available in 30-90 seconds depending on batch size</li>
         </ul>
+        
+        <div className="mt-4 p-3 bg-yellow-900/20 border border-yellow-600 rounded-lg">
+          <h4 className="text-sm font-semibold text-yellow-400 mb-1">Performance Tips:</h4>
+          <ul className="text-xs text-yellow-300 space-y-1">
+            <li>• Start with 10-20 stocks for faster results</li>
+            <li>• Larger batches (50-100) may take 2-3 minutes</li>
+            <li>• If you get a timeout, try a smaller batch size</li>
+          </ul>
+        </div>
       </div>
     </div>
   );

@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import ScreeningForm from '../../components/ScreeningForm';
 import ScreeningResults from '../../components/ScreeningResults';
-import LoadingSpinner from '../../components/LoadingSpinner';
 import { ScreeningFormData, ScreeningResponse } from '../../types/stock';
 import { screenStocks } from '../../utils/api';
 
@@ -33,6 +32,11 @@ export default function ScreeningPage() {
     }
   };
 
+  const handleRetry = () => {
+    setError(null);
+    // The form will still have the last submitted data, so user can just click submit again
+  };
+
   return (
     <div className="min-h-screen bg-gray-900 text-white">
       <div className="container mx-auto px-4 py-8">
@@ -55,26 +59,33 @@ export default function ScreeningPage() {
             <ScreeningForm onSubmit={handleSubmit} isLoading={isLoading} />
           </div>
 
-          {/* Loading State */}
-          {isLoading && (
-            <div className="mt-8">
-              <div className="text-center">
-                <LoadingSpinner />
-                <p className="text-gray-400 mt-4">
-                  Screening stocks... This typically takes 30 seconds or less.
-                </p>
-              </div>
-            </div>
-          )}
-
           {/* Error State */}
           {error && !isLoading && (
             <div className="mt-8 bg-red-900/20 border border-red-500 rounded-lg p-6">
-              <div className="flex items-center">
-                <div className="text-red-400 text-lg mr-3">⚠️</div>
-                <div>
-                  <h3 className="text-red-400 font-semibold">Error</h3>
-                  <p className="text-red-300">{error}</p>
+              <div className="flex items-start">
+                <div className="text-red-400 text-lg mr-3 mt-0.5">⚠️</div>
+                <div className="flex-1">
+                  <h3 className="text-red-400 font-semibold mb-2">Screening Error</h3>
+                  <p className="text-red-300 mb-4">{error}</p>
+                  
+                  {/* Additional guidance for timeout errors */}
+                  {error.includes('timeout') || error.includes('524') && (
+                    <div className="mb-4 p-3 bg-yellow-900/20 border border-yellow-600 rounded-lg">
+                      <h4 className="text-sm font-semibold text-yellow-400 mb-1">Suggested Solutions:</h4>
+                      <ul className="text-sm text-yellow-300 space-y-1">
+                        <li>• Try a smaller batch size (10-20 stocks)</li>
+                        <li>• Wait a few minutes and try again</li>
+                        <li>• The workflow may still be processing in the background</li>
+                      </ul>
+                    </div>
+                  )}
+                  
+                  <button
+                    onClick={handleRetry}
+                    className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                  >
+                    Try Again
+                  </button>
                 </div>
               </div>
             </div>

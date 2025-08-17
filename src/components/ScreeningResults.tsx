@@ -8,10 +8,14 @@ interface ScreeningResultsProps {
 
 export default function ScreeningResults({ data }: ScreeningResultsProps) {
   const formatMarketCap = (marketCap: number) => {
-    if (marketCap >= 1000000) {
-      return `$${(marketCap / 1000000).toFixed(1)}B`;
+    if (marketCap >= 1000000000000) {
+      return `$${(marketCap / 1000000000000).toFixed(1)}T`;
+    } else if (marketCap >= 1000000000) {
+      return `$${(marketCap / 1000000000).toFixed(1)}B`;
+    } else if (marketCap >= 1000000) {
+      return `$${(marketCap / 1000000).toFixed(1)}M`;
     } else if (marketCap >= 1000) {
-      return `$${(marketCap / 1000).toFixed(1)}M`;
+      return `$${(marketCap / 1000).toFixed(1)}K`;
     }
     return `$${marketCap.toFixed(0)}`;
   };
@@ -32,6 +36,13 @@ export default function ScreeningResults({ data }: ScreeningResultsProps) {
     if (score >= 60) return 'text-blue-400';
     if (score >= 40) return 'text-yellow-400';
     return 'text-red-400';
+  };
+
+  const getRankBadgeColor = (rank: number) => {
+    if (rank === 1) return 'bg-gradient-to-r from-yellow-500 to-yellow-600 text-yellow-900';
+    if (rank === 2) return 'bg-gradient-to-r from-gray-400 to-gray-500 text-gray-900';
+    if (rank === 3) return 'bg-gradient-to-r from-orange-500 to-orange-600 text-orange-900';
+    return 'bg-gradient-to-r from-purple-500 to-purple-600 text-white';
   };
 
   return (
@@ -80,6 +91,11 @@ export default function ScreeningResults({ data }: ScreeningResultsProps) {
                 {/* Stock Info */}
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
+                    {/* Rank Badge */}
+                    <div className={`px-3 py-1 rounded-full text-sm font-bold ${getRankBadgeColor(stock.rank || index + 1)}`}>
+                      #{stock.rank || index + 1}
+                    </div>
+                    
                     <div className="text-2xl font-bold text-white">{stock.symbol}</div>
                     <div className={`px-2 py-1 rounded text-xs font-semibold border ${getRatingColor(stock.rating)}`}>
                       {stock.rating}
@@ -168,8 +184,10 @@ export default function ScreeningResults({ data }: ScreeningResultsProps) {
                   </span>
                 </div>
                 <div>
-                  <span className="text-gray-400">Rank:</span>
-                  <span className="text-purple-400 font-semibold ml-1">#{index + 1}</span>
+                  <span className="text-gray-400">Market Cap:</span>
+                  <span className="text-white ml-1">
+                    {formatMarketCap(stock.marketCap)}
+                  </span>
                 </div>
               </div>
             </div>

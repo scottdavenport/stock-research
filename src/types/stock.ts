@@ -80,6 +80,7 @@ export interface StockFormData {
 
 // New types for stock screening
 export interface ScreeningResult {
+  rank: number;
   symbol: string;
   name: string;
   sector: string;
@@ -96,7 +97,6 @@ export interface ScreeningResult {
     quality: number;
     technical: number;
   };
-  rank?: number;
 }
 
 export interface ScreeningSummary {

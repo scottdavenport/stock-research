@@ -45,7 +45,9 @@ npm install
 3. Create a `.env.local` file in the root directory:
 ```env
 NEXT_PUBLIC_N8N_WEBHOOK_URL_RESEARCHER=https://your-n8n-instance.com/webhook/stock-research
-NEXT_PUBLIC_N8N_WEBHOOK_URL_SCREENER=https://your-n8n-instance.com/webhook/screen-stocks
+NEXT_PUBLIC_N8N_WEBHOOK_STOCK_RESEARCHER_API_KEY=your-stock-research-bearer-token-here
+NEXT_PUBLIC_N8N_WEBHOOK_URL_SCREENER=https://your-n8n-instance.com/webhook/screen-stocks-sequential
+NEXT_PUBLIC_N8N_WEBHOOK_STOCK_SCREENER_API_KEY=your-stock-screener-bearer-token-here
 ```
 
 4. Run the development server:
