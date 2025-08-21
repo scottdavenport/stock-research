@@ -411,8 +411,8 @@ export default function ScreeningResultsWithPolling({ sessionId, userEmail }: Sc
     </div>
   );
 
-  // Loading/Polling State
-  if (isLoading || isPolling) {
+  // Loading/Polling State - Only show spinner if no results are available
+  if ((isLoading || isPolling) && results.length === 0 && latestResults.length === 0) {
     return (
       <div>
         {debugSection}
@@ -451,20 +451,6 @@ export default function ScreeningResultsWithPolling({ sessionId, userEmail }: Sc
             )}
           </div>
         </div>
-        
-        {/* Show latest results while polling if available */}
-        {latestResults.length > 0 && (
-          <div className="mt-6">
-            <div className="bg-blue-900/20 border border-blue-500 rounded-lg p-4 mb-4">
-              <h3 className="text-blue-400 font-semibold mb-2">📈 Previous Results Available</h3>
-              <p className="text-blue-300 text-sm">
-                Showing {latestResults.length} results from your most recent completed screening 
-                ({latestSession?.completedAt || latestSession?.createdAt ? new Date(latestSession?.completedAt || latestSession?.createdAt).toLocaleString() : 'N/A'})
-              </p>
-            </div>
-            {renderResults(latestResults, latestSession)}
-          </div>
-        )}
       </div>
     );
   }
@@ -489,73 +475,54 @@ export default function ScreeningResultsWithPolling({ sessionId, userEmail }: Sc
             </div>
           </div>
         </div>
+      </div>
+    );
+  }
+
+  // Results State - Show results when available, regardless of polling status
+  if (results.length > 0 || latestResults.length > 0) {
+    const resultsToShow = results.length > 0 ? results : latestResults;
+    const sessionToShow = results.length > 0 ? session : latestSession;
+    
+    return (
+      <div>
+        {debugSection}
         
-        {/* Show latest results even on error */}
-        {latestResults.length > 0 && (
-          <div className="mt-6">
-            <div className="bg-blue-900/20 border border-blue-500 rounded-lg p-4 mb-4">
-              <h3 className="text-blue-400 font-semibold mb-2">📈 Previous Results Available</h3>
-              <p className="text-blue-300 text-sm">
-                Showing {latestResults.length} results from your most recent completed screening 
-                ({latestSession?.completedAt || latestSession?.createdAt ? new Date(latestSession?.completedAt || latestSession?.createdAt).toLocaleString() : 'N/A'})
-              </p>
+
+        
+        {renderResults(resultsToShow, sessionToShow)}
+        
+        {/* Session Info */}
+        {sessionToShow && (
+          <div className="mt-6 p-4 bg-gray-700/50 rounded-lg">
+            <h4 className="text-sm font-semibold text-gray-300 mb-2">Session Information</h4>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs text-gray-400">
+              <div>
+                <span className="font-medium">Session ID:</span> {sessionToShow.id}
+              </div>
+              <div>
+                <span className="font-medium">Started:</span> {sessionToShow.createdAt ? new Date(sessionToShow.createdAt).toLocaleString() : 'N/A'}
+              </div>
+              <div>
+                <span className="font-medium">Completed:</span> {sessionToShow.completedAt ? new Date(sessionToShow.completedAt).toLocaleString() : 'N/A'}
+              </div>
+              <div>
+                <span className="font-medium">Processing Time:</span> {formatTime(sessionToShow.processingTimeSeconds)}
+              </div>
             </div>
-            {renderResults(latestResults, latestSession)}
           </div>
         )}
       </div>
     );
   }
 
-  // Results State
-  if ((session?.status === 'completed' || session?.status === 'replaced') && results.length > 0) {
-    return (
-      <div>
-        {debugSection}
-        {renderResults(results, session)}
-        
-        {/* Session Info */}
-        <div className="mt-6 p-4 bg-gray-700/50 rounded-lg">
-          <h4 className="text-sm font-semibold text-gray-300 mb-2">Session Information</h4>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs text-gray-400">
-            <div>
-              <span className="font-medium">Session ID:</span> {session.id}
-            </div>
-            <div>
-              <span className="font-medium">Started:</span> {session.createdAt ? new Date(session.createdAt).toLocaleString() : 'N/A'}
-            </div>
-            <div>
-              <span className="font-medium">Completed:</span> {session.completedAt ? new Date(session.completedAt).toLocaleString() : 'N/A'}
-            </div>
-            <div>
-              <span className="font-medium">Processing Time:</span> {formatTime(session.processingTimeSeconds)}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // No results state but maybe show latest results
+  // No results state
   return (
     <div>
       {debugSection}
-      {latestResults.length > 0 ? (
-        <div>
-          <div className="bg-blue-900/20 border border-blue-500 rounded-lg p-4 mb-4">
-            <h3 className="text-blue-400 font-semibold mb-2">📈 Latest Results Available</h3>
-            <p className="text-blue-300 text-sm">
-              Showing {latestResults.length} results from your most recent completed screening 
-              ({latestSession?.completedAt || latestSession?.createdAt ? new Date(latestSession?.completedAt || latestSession?.createdAt).toLocaleString() : 'N/A'})
-            </p>
-          </div>
-          {renderResults(latestResults, latestSession)}
-        </div>
-      ) : (
-        <div className="bg-gray-800 rounded-lg p-8 border border-gray-700 text-center">
-          <p className="text-gray-400">No screening results available yet.</p>
-        </div>
-      )}
+      <div className="bg-gray-800 rounded-lg p-8 border border-gray-700 text-center">
+        <p className="text-gray-400">No screening results available yet.</p>
+      </div>
     </div>
   );
 }

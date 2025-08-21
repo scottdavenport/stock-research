@@ -59,7 +59,7 @@ export function useScreeningResults(sessionId: string | null, userEmail: string 
         );
         
         if (processingSession) {
-          console.log('🚀 Found processing session, setting as current:', processingSession.id);
+          console.log('📋 Found processing session, setting as current:', processingSession.id);
           const newSession = {
             id: processingSession.id,
             userEmail: processingSession.user_email,
@@ -76,45 +76,9 @@ export function useScreeningResults(sessionId: string | null, userEmail: string 
           };
           setSession(newSession);
           
-          // Start polling immediately when we find a processing session
-          console.log('🚀 Starting polling for found session:', processingSession.id);
-          setIsLoading(true);
-          setError(null);
-          setIsPolling(true);
-          attemptCountRef.current = 0;
-          setPollCount(0);
-          
-          // Initial fetch
-          fetchSessionStatus();
-          fetchLatestResults();
-          
-          // Set up polling interval (10 seconds)
-          pollingIntervalRef.current = setInterval(() => {
-            attemptCountRef.current++;
-            
-            if (attemptCountRef.current >= maxAttempts) {
-              setError('Screening timed out after 15 minutes. Please try again.');
-              setIsPolling(false);
-              if (pollingIntervalRef.current) {
-                clearInterval(pollingIntervalRef.current);
-                pollingIntervalRef.current = null;
-              }
-              return;
-            }
-
-            fetchSessionStatus();
-            fetchLatestResults();
-          }, 10000);
-          
-          // Set up timeout (15 minutes)
-          timeoutRef.current = setTimeout(() => {
-            setError('Screening timed out after 15 minutes. Please try again.');
-            setIsPolling(false);
-            if (pollingIntervalRef.current) {
-              clearInterval(pollingIntervalRef.current);
-              pollingIntervalRef.current = null;
-            }
-          }, 15 * 60 * 1000);
+          // Don't start polling automatically for existing sessions
+          // Only start polling when a new screening is initiated (sessionId prop provided)
+          console.log('📋 Found existing processing session, not starting polling automatically');
         } else {
           console.log('📭 No processing sessions found in recent sessions');
           // Log all session statuses for debugging
@@ -319,30 +283,18 @@ export function useScreeningResults(sessionId: string | null, userEmail: string 
           clearTimeout(timeoutRef.current);
           timeoutRef.current = null;
         }
-      } else if (sessionData.status === 'replaced' && transformedResults.length > 0) {
-        console.log('✅ Session replaced with results, stopping polling');
-        setIsPolling(false);
-        if (pollingIntervalRef.current) {
-          clearInterval(pollingIntervalRef.current);
-          pollingIntervalRef.current = null;
-        }
-        if (timeoutRef.current) {
-          clearTimeout(timeoutRef.current);
-          timeoutRef.current = null;
-        }
-      } else if (sessionData.status === 'completed' && transformedResults.length > 0) {
-        console.log('✅ Session completed with results, stopping polling');
-        setIsPolling(false);
-        if (pollingIntervalRef.current) {
-          clearInterval(pollingIntervalRef.current);
-          pollingIntervalRef.current = null;
-        }
-        if (timeoutRef.current) {
-          clearTimeout(timeoutRef.current);
-          timeoutRef.current = null;
-        }
       } else if (transformedResults.length > 0) {
-        console.log('📊 Found results while session is still processing, continuing to poll for updates');
+        // Stop polling as soon as we have results, regardless of session status
+        console.log('✅ Found results, stopping polling');
+        setIsPolling(false);
+        if (pollingIntervalRef.current) {
+          clearInterval(pollingIntervalRef.current);
+          pollingIntervalRef.current = null;
+        }
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+          timeoutRef.current = null;
+        }
       } else {
         console.log('⏳ Session still processing, continuing to poll...');
       }
@@ -421,9 +373,13 @@ export function useScreeningResults(sessionId: string | null, userEmail: string 
       console.log('🔄 Fetching latest results for user:', userEmail);
       fetchLatestResults();
       
-      // Always start polling when we have a userEmail, regardless of sessionId
-      console.log('🚀 Starting polling for user:', userEmail);
-      startPolling();
+      // Only start polling if we have a sessionId (indicating a new screening was initiated)
+      if (sessionId) {
+        console.log('🚀 Starting polling for new session:', sessionId);
+        startPolling();
+      } else {
+        console.log('📋 No active sessionId, not starting polling');
+      }
     } else {
       console.log('❌ No userEmail provided');
     }
