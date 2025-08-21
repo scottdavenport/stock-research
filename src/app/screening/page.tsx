@@ -2,37 +2,63 @@
 
 import { useState } from 'react';
 import ScreeningForm from '../../components/ScreeningForm';
-import ScreeningResults from '../../components/ScreeningResults';
-import { ScreeningFormData, ScreeningResponse } from '../../types/stock';
+import ScreeningResultsWithPolling from '../../components/ScreeningResultsWithPolling';
+import { ScreeningFormData, ScreeningSessionResponse } from '../../types/stock';
 import { screenStocks } from '../../utils/api';
 import AuthGuard from '../../components/AuthGuard';
+import { useAuth } from '../../components/AuthProvider';
 
 export default function ScreeningPage() {
   const [isLoading, setIsLoading] = useState(false);
-  const [screeningData, setScreeningData] = useState<ScreeningResponse | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
 
   const handleSubmit = async (formData: ScreeningFormData) => {
     console.log('Starting screening submission:', formData);
+    
+    // Check if user is authenticated
+    if (!user?.email) {
+      setError('You must be logged in to run stock screening. Please log in and try again.');
+      return;
+    }
+    
     setIsLoading(true);
     setError(null);
-    setScreeningData(null);
+    setSessionId(null);
 
     try {
-      console.log('Calling screenStocks API...');
-      const response = await screenStocks(formData);
-      console.log('Received screening response:', response);
+      console.log('Calling screenStocks API with user email:', user.email);
+      const response = await screenStocks(formData, user.email);
+      console.log('Received screening session response:', response);
 
       if (response.success) {
-        console.log('Screening successful, setting data...');
-        setScreeningData(response);
+        console.log('Screening session created successfully:', response.sessionId);
+        console.log('🔧 Setting sessionId in page component:', response.sessionId);
+        setSessionId(response.sessionId);
       } else {
-        console.log('Screening failed:', response.error);
-        setError(response.error || 'Failed to screen stocks');
+        console.log('Screening session creation failed:', response.error);
+        setError(response.error || 'Failed to create screening session');
       }
     } catch (err) {
       console.error('Screening error:', err);
-      setError('An error occurred while screening stocks. Please try again.');
+      
+      // Provide more specific error messages based on the error type
+      let errorMessage = 'An error occurred while creating the screening session. Please try again.';
+      
+      if (err instanceof Error) {
+        if (err.message.includes('JSON')) {
+          errorMessage = 'The screening service returned invalid data. This may be due to a configuration issue. Please try again or contact support if the problem persists.';
+        } else if (err.message.includes('timeout') || err.message.includes('524')) {
+          errorMessage = 'The screening service is taking longer than expected to respond. Please try again in a few minutes.';
+        } else if (err.message.includes('session')) {
+          errorMessage = 'Failed to create screening session. Please try again.';
+        } else {
+          errorMessage = err.message;
+        }
+      }
+      
+      setError(errorMessage);
     } finally {
       console.log('Screening submission completed, setting loading to false');
       setIsLoading(false);
@@ -41,6 +67,7 @@ export default function ScreeningPage() {
 
   const handleRetry = () => {
     setError(null);
+    setSessionId(null);
     // The form will still have the last submitted data, so user can just click submit again
   };
 
@@ -62,8 +89,8 @@ export default function ScreeningPage() {
 
           {/* Main Content */}
           <div className="max-w-7xl mx-auto">
-            {/* Form Section */}
-            <div className="mb-8">
+            {/* Form Section - More compact */}
+            <div className="mb-6 max-w-2xl mx-auto">
               <ScreeningForm onSubmit={handleSubmit} isLoading={isLoading} />
             </div>
 
@@ -76,15 +103,14 @@ export default function ScreeningPage() {
                     <h3 className="text-red-400 font-semibold mb-2">Screening Error</h3>
                     <p className="text-red-300 mb-4">{error}</p>
                     
-                    {/* Additional guidance for timeout and cancellation errors */}
-                    {(error.includes('timeout') || error.includes('524') || error.includes('cancelled') || error.includes('cancellation')) && (
+                    {/* Additional guidance for session creation errors */}
+                    {error.includes('session') && (
                       <div className="mb-4 p-3 bg-yellow-900/20 border border-yellow-600 rounded-lg">
                         <h4 className="text-sm font-semibold text-yellow-400 mb-1">Suggested Solutions:</h4>
                         <ul className="text-sm text-yellow-300 space-y-1">
-                          <li>• Try a smaller batch size (10-20 stocks)</li>
-                          <li>• Wait a few minutes and try again</li>
-                          <li>• The workflow may still be processing in the background</li>
-                          <li>• For Full Screen mode, this is normal - the process takes 8-10 minutes</li>
+                          <li>• Check your internet connection</li>
+                          <li>• Try again in a few minutes</li>
+                          <li>• If the problem persists, contact support</li>
                         </ul>
                       </div>
                     )}
@@ -100,10 +126,13 @@ export default function ScreeningPage() {
               </div>
             )}
 
-            {/* Results Section */}
-            {screeningData && !isLoading && (
+            {/* Results Section with Polling - Always show if user is logged in */}
+            {user?.email && (
               <div className="mt-8">
-                <ScreeningResults data={screeningData} />
+                <div className="text-xs text-gray-500 mb-2">
+                  Debug: sessionId = {sessionId || 'null'}, userEmail = {user.email}
+                </div>
+                <ScreeningResultsWithPolling sessionId={sessionId} userEmail={user.email} />
               </div>
             )}
           </div>

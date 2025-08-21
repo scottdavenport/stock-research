@@ -25,9 +25,21 @@ const N8N_AUTH_TOKEN = process.env.NEXT_PUBLIC_N8N_WEBHOOK_STOCK_SCREENER_API_KE
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { maxStocks, jobId } = body;
+    const { maxStocks, jobId, userEmail } = body;
     
-    console.log('Polling screening status for:', { maxStocks, jobId });
+    // Validate user email is provided
+    if (!userEmail) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'User email is required for status check.',
+          timestamp: new Date().toISOString()
+        },
+        { status: 400 }
+      );
+    }
+    
+    console.log('Polling screening status for:', { maxStocks, jobId, userEmail });
 
     // Check if auth token is available
     if (!N8N_AUTH_TOKEN) {
@@ -39,7 +51,7 @@ export async function POST(request: NextRequest) {
     // For now, we'll simulate a status check by returning "still processing"
     // This prevents multiple screening requests from being triggered
     
-    console.log('Status check for job:', jobId, 'maxStocks:', maxStocks);
+    console.log('Status check for job:', jobId, 'maxStocks:', maxStocks, 'userEmail:', userEmail);
     
     // Simulate processing time based on batch size
     const estimatedProcessingTime = maxStocks >= 500 ? 540 : maxStocks * 4.5 + 20; // seconds
@@ -63,7 +75,7 @@ export async function POST(request: NextRequest) {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${N8N_AUTH_TOKEN}`,
       },
-      body: JSON.stringify({ maxStocks }),
+      body: JSON.stringify({ maxStocks, userEmail }),
     });
 
     if (!response.ok) {

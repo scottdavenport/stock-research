@@ -1,10 +1,10 @@
 'use client';
 
-import { ScreeningResponse } from '../types/stock';
+import { ScreeningResponseWithSession } from '../types/stock';
 import { useRouter } from 'next/navigation';
 
 interface ScreeningResultsProps {
-  data: ScreeningResponse;
+  data: ScreeningResponseWithSession;
 }
 
 export default function ScreeningResults({ data }: ScreeningResultsProps) {
@@ -55,6 +55,25 @@ export default function ScreeningResults({ data }: ScreeningResultsProps) {
 
   return (
     <div className="space-y-6">
+      {/* Session Information */}
+      {data.sessionId && (
+        <div className="bg-blue-900/20 border border-blue-500 rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-blue-400 font-semibold mb-1">Screening Session</h3>
+              <p className="text-blue-300 text-sm">
+                Session ID: {data.sessionId.slice(0, 8)}... • User: {data.userEmail}
+              </p>
+            </div>
+            <div className="text-right">
+              <div className="text-sm text-blue-300">
+                {new Date(data.timestamp).toLocaleString()}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Summary Section */}
       <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
         <h2 className="text-2xl font-bold text-white mb-4">Screening Summary</h2>

@@ -10,7 +10,7 @@ interface ScreeningFormProps {
 
 export default function ScreeningForm({ onSubmit, isLoading }: ScreeningFormProps) {
   const [formData, setFormData] = useState<ScreeningFormData>({
-    batchSize: 5,
+    batchSize: 500,
     startIndex: 0,
     type: 'momentum',
     sector: 'All',
@@ -74,26 +74,26 @@ export default function ScreeningForm({ onSubmit, isLoading }: ScreeningFormProp
   };
 
   return (
-    <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-      <h2 className="text-2xl font-bold text-white mb-6">Stock Screener</h2>
+    <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+      <h2 className="text-xl font-bold text-white mb-4">Stock Screener</h2>
       
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-4">
         {/* Screening Type */}
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
+          <label className="block text-sm font-medium text-gray-300 mb-1">
             Screening Strategy
           </label>
           <select
             value={formData.type}
             onChange={(e) => handleInputChange('type', e.target.value)}
-            className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
             disabled={isLoading}
           >
             <option value="momentum">Momentum (Balanced)</option>
             <option value="conservative">Conservative</option>
             <option value="aggressive">Aggressive</option>
           </select>
-          <p className="text-sm text-gray-400 mt-1">
+          <p className="text-xs text-gray-400 mt-1">
             {formData.type === 'momentum' && 'Balanced approach focusing on momentum + quality'}
             {formData.type === 'conservative' && 'Lower risk, higher quality stocks'}
             {formData.type === 'aggressive' && 'Higher risk, maximum momentum potential'}
@@ -102,36 +102,36 @@ export default function ScreeningForm({ onSubmit, isLoading }: ScreeningFormProp
 
         {/* Batch Size */}
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
+          <label className="block text-sm font-medium text-gray-300 mb-1">
             Batch Size
           </label>
           <select
             value={formData.batchSize}
             onChange={(e) => handleInputChange('batchSize', parseInt(e.target.value))}
-            className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
             disabled={isLoading}
           >
-            <option value={5}>5 stocks</option>
-            <option value={10}>10 stocks</option>
-            <option value={20}>20 stocks</option>
-            <option value={50}>50 stocks</option>
-            <option value={100}>100 stocks</option>
             <option value={500}>Full Screen (500+ stocks)</option>
+            <option value={100}>100 stocks</option>
+            <option value={50}>50 stocks</option>
+            <option value={20}>20 stocks</option>
+            <option value={10}>10 stocks</option>
+            <option value={5}>5 stocks</option>
           </select>
-          <p className="text-sm text-gray-400 mt-1">
-            Number of stocks to screen in this batch • Est. time: {formatTime(calculateEstimatedTime(formData.batchSize || 5))}
+          <p className="text-xs text-gray-400 mt-1">
+            Number of stocks to screen • Est. time: {formatTime(calculateEstimatedTime(formData.batchSize || 500))}
           </p>
         </div>
 
         {/* Sector Filter */}
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
+          <label className="block text-sm font-medium text-gray-300 mb-1">
             Sector Focus
           </label>
           <select
             value={formData.sector}
             onChange={(e) => handleInputChange('sector', e.target.value)}
-            className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
             disabled={isLoading}
           >
             <option value="All">All Sectors</option>
@@ -148,13 +148,13 @@ export default function ScreeningForm({ onSubmit, isLoading }: ScreeningFormProp
 
         {/* Market Cap Filter */}
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
+          <label className="block text-sm font-medium text-gray-300 mb-1">
             Market Cap
           </label>
           <select
             value={formData.marketCap}
             onChange={(e) => handleInputChange('marketCap', e.target.value)}
-            className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
             disabled={isLoading}
           >
             <option value="All">All Caps</option>
@@ -168,11 +168,11 @@ export default function ScreeningForm({ onSubmit, isLoading }: ScreeningFormProp
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:from-gray-600 disabled:to-gray-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-800"
+          className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:from-gray-600 disabled:to-gray-700 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-800"
         >
           {isLoading ? (
             <div className="flex items-center justify-center">
-              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
               Screening in Progress...
             </div>
           ) : (
@@ -180,17 +180,15 @@ export default function ScreeningForm({ onSubmit, isLoading }: ScreeningFormProp
           )}
         </button>
 
-        {/* Full Screen Warning */}
+        {/* Full Screen Info */}
         {formData.batchSize === 500 && !isLoading && (
-          <div className="mt-4 p-4 bg-orange-900/20 border border-orange-500 rounded-lg">
+          <div className="mt-3 p-3 bg-blue-900/20 border border-blue-500 rounded-lg">
             <div className="flex items-start">
-              <div className="text-orange-400 text-lg mr-3 mt-0.5">⚠️</div>
+              <div className="text-blue-400 text-sm mr-2 mt-0.5">ℹ️</div>
               <div>
-                <h4 className="text-orange-400 font-semibold mb-1">Full Screen Mode</h4>
-                <p className="text-orange-300 text-sm">
-                  This will screen 500+ stocks and may take 8-10 minutes to complete. 
-                  Please ensure you have time to wait for results. You can leave this page 
-                  open and return later to check progress.
+                <p className="text-blue-300 text-xs">
+                  Full Screen mode will analyze 500+ stocks and typically takes 8-10 minutes. 
+                  You can leave this page open and return later to check progress.
                 </p>
               </div>
             </div>

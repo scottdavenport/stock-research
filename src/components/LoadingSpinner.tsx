@@ -1,11 +1,16 @@
-export default function LoadingSpinner() {
+interface LoadingSpinnerProps {
+  size?: 'small' | 'medium' | 'large';
+  className?: string;
+}
+
+export default function LoadingSpinner({ size = 'medium', className = '' }: LoadingSpinnerProps) {
+  const sizeClasses = {
+    small: 'h-4 w-4',
+    medium: 'h-8 w-8',
+    large: 'h-12 w-12'
+  };
+
   return (
-    <div className="flex items-center justify-center p-8">
-      <div className="relative">
-        <div className="w-12 h-12 border-4 border-gray-700 rounded-full"></div>
-        <div className="absolute top-0 left-0 w-12 h-12 border-4 border-transparent border-t-purple-500 rounded-full animate-spin"></div>
-      </div>
-      <span className="ml-4 text-gray-300">Researching stock...</span>
-    </div>
+    <div className={`animate-spin rounded-full border-b-2 border-white ${sizeClasses[size]} ${className}`}></div>
   );
 }

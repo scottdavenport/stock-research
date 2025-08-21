@@ -87,6 +87,25 @@ CREATE TABLE user_watchlist_stocks (
   PRIMARY KEY (watchlist_id, symbol)
 );
 
+-- User screening sessions table (for async screening workflow)
+CREATE TABLE user_screening_sessions (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_email TEXT NOT NULL,
+  status TEXT NOT NULL CHECK (status IN ('pending', 'processing', 'completed', 'failed')) DEFAULT 'pending',
+  total_stocks_screened INTEGER DEFAULT 0,
+  total_buy_rated INTEGER DEFAULT 0,
+  buy_percentage NUMERIC(5,2) DEFAULT 0,
+  average_score NUMERIC(5,2) DEFAULT 0,
+  processing_time_seconds INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  completed_at TIMESTAMPTZ,
+  screening_filters JSONB -- Store the original screening parameters
+);
+
+-- Update screening_results table to work with sessions
+ALTER TABLE screening_results ADD COLUMN session_id UUID REFERENCES user_screening_sessions(id) ON DELETE CASCADE;
+ALTER TABLE screening_results ADD COLUMN rank_position INTEGER;
+
 -- Indexes for better performance
 CREATE INDEX idx_stock_universe_symbol ON stock_universe(symbol);
 CREATE INDEX idx_stock_universe_active ON stock_universe(is_active);
@@ -97,6 +116,13 @@ CREATE INDEX idx_screening_results_symbol_date ON screening_results(symbol, scre
 CREATE INDEX idx_screening_results_rating ON screening_results(rating);
 CREATE INDEX idx_stock_performance_symbol_date ON stock_performance(symbol, date DESC);
 CREATE INDEX idx_universe_lists_public ON universe_lists(is_public);
+
+-- Indexes for session-based screening
+CREATE INDEX idx_user_screening_sessions_user_email ON user_screening_sessions(user_email);
+CREATE INDEX idx_user_screening_sessions_status ON user_screening_sessions(status);
+CREATE INDEX idx_user_screening_sessions_created_at ON user_screening_sessions(created_at DESC);
+CREATE INDEX idx_screening_results_session_id ON screening_results(session_id);
+CREATE INDEX idx_screening_results_rank_position ON screening_results(rank_position);
 
 -- Insert default data
 INSERT INTO universe_lists (name, description, is_default, is_public) VALUES 

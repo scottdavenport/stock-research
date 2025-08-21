@@ -121,4 +121,82 @@ export interface ScreeningFormData {
   type?: 'momentum' | 'conservative' | 'aggressive';
   sector?: string;
   marketCap?: 'Large' | 'Mid' | 'Small' | 'All';
+  userEmail?: string; // Add user email for n8n integration
+}
+
+// New interfaces for session tracking
+export interface ScreeningSession {
+  id: string;
+  userId: string;
+  userEmail: string;
+  screeningType: string;
+  filters: Record<string, unknown>;
+  totalStocksScreened: number;
+  totalBuyRated: number;
+  buyPercentage: number;
+  averageScore: number;
+  averageBuyScore: number;
+  processingTimeSeconds: number;
+  status: 'running' | 'completed' | 'failed';
+  createdAt: string;
+  completedAt?: string;
+  sessionData?: Record<string, unknown>;
+}
+
+export interface ScreeningResultWithSession extends ScreeningResult {
+  sessionId?: string;
+  userId?: string;
+}
+
+export interface ScreeningResponseWithSession extends ScreeningResponse {
+  sessionId?: string;
+  userEmail?: string;
+  session?: ScreeningSession;
+}
+
+// New interfaces for session-based screening (from cursor polling prompt)
+export interface ScreeningSession {
+  id: string;
+  userEmail: string;
+  status: 'pending' | 'processing' | 'running' | 'completed' | 'failed' | 'replaced';
+  totalStocksScreened: number;
+  totalBuyRated: number;
+  buyPercentage: number;
+  averageScore: number;
+  processingTimeSeconds: number;
+  createdAt: string;
+  completedAt?: string;
+  screeningType?: string;
+  filters?: Record<string, unknown>;
+}
+
+export interface ScreeningResultWithSession {
+  symbol: string;
+  name: string;
+  score: number;
+  rating: 'STRONG BUY' | 'BUY' | 'WEAK BUY' | 'HOLD' | 'WEAK SELL' | 'SELL' | 'STRONG SELL';
+  price: number;
+  changePercent: number;
+  sector: string;
+  rankPosition: number;
+  scoreBreakdown: {
+    momentum: number;
+    quality: number;
+    technical: number;
+  };
+}
+
+export interface ScreeningSessionResponse {
+  success: boolean;
+  sessionId: string;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  message?: string;
+  timestamp: string;
+}
+
+export interface ScreeningResultsResponse {
+  success: boolean;
+  session: ScreeningSession;
+  results: ScreeningResultWithSession[];
+  timestamp: string;
 }

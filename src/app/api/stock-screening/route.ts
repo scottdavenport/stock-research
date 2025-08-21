@@ -26,11 +26,24 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     
-    // Extract maxStocks from the form data
+    // Extract data from the form
     const maxStocks = body.batchSize || 20;
+    const userEmail = body.userEmail;
+    
+    // Validate user email is provided
+    if (!userEmail) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'User email is required for screening. Please log in and try again.',
+          timestamp: new Date().toISOString()
+        },
+        { status: 400 }
+      );
+    }
     
     console.log('Proxying screening request to n8n:', N8N_WEBHOOK_URL);
-    console.log('Screening request body:', { maxStocks });
+    console.log('Screening request body:', { maxStocks, userEmail, ...body });
 
     // Check if auth token is available
     if (!N8N_AUTH_TOKEN) {
@@ -54,7 +67,11 @@ export async function POST(request: NextRequest) {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${N8N_AUTH_TOKEN}`,
         },
-        body: JSON.stringify({ maxStocks }),
+        body: JSON.stringify({ 
+          maxStocks,
+          userEmail,
+          ...body // Include all other form data
+        }),
         signal: controller.signal,
       });
 
@@ -116,9 +133,47 @@ export async function POST(request: NextRequest) {
         throw new Error(`n8n API error: ${response.status} - ${errorText}`);
       }
 
-      const data = await response.json();
+      let data;
+      let rawResponseText = '';
       
-      console.log('n8n screening response:', data);
+      try {
+        data = await response.json();
+        console.log('n8n screening response:', data);
+      } catch (jsonError) {
+        console.error('Failed to parse n8n response as JSON:', jsonError);
+        
+        // Get the raw response text for debugging
+        try {
+          rawResponseText = await response.text();
+          console.error('Raw response text:', rawResponseText);
+        } catch (textError) {
+          console.error('Could not read response text:', textError);
+        }
+        
+        // Check if this is a large batch that might still be processing
+        if (maxStocks >= 100) {
+          console.log('Large batch with JSON parse error - treating as processing and switching to polling');
+          return NextResponse.json({
+            success: false,
+            requiresPolling: true,
+            message: `Screening ${maxStocks} stocks encountered a response error but may still be processing. Switching to polling mode.`,
+            estimatedTime: maxStocks >= 500 ? '8-10 minutes' : '3-5 minutes',
+            timestamp: new Date().toISOString()
+          }, { status: 202 }); // 202 Accepted
+        }
+        
+        // If we can't parse JSON, it might be a workflow error
+        const errorMessage = rawResponseText.includes('Create Screening Session') 
+          ? 'The screening workflow encountered a configuration error. This is likely due to an issue with the n8n workflow setup. Please try again or contact support if the problem persists.'
+          : 'The screening workflow encountered an error and returned invalid data. This may be due to a configuration issue in the workflow. Please try again or contact support if the problem persists.';
+        
+        throw new Error(errorMessage);
+      }
+
+      // Validate the response structure
+      if (!data || typeof data !== 'object') {
+        throw new Error('The screening workflow returned an invalid response format. Please try again.');
+      }
 
       // Transform the n8n response to match our expected format
       const transformedResponse = {
