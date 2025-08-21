@@ -1,9 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useScreeningResults } from '../hooks/useScreeningResults';
 import { ScreeningSession, ScreeningResultWithSession } from '../types/stock';
 import LoadingSpinner from './LoadingSpinner';
+import WatchListButton from './WatchListButton';
+import AutoSuggestionModal from './AutoSuggestionModal';
+import { useWatchlist } from '../hooks/useWatchlist';
 
 interface ScreeningResultsWithPollingProps {
   sessionId: string;
@@ -23,10 +26,13 @@ export default function ScreeningResultsWithPolling({ sessionId, userEmail }: Sc
     lastPollTime, 
     retry 
   } = useScreeningResults(sessionId, userEmail);
+  const { isWatched } = useWatchlist();
   const [sortBy, setSortBy] = useState<'score' | 'rating' | 'changePercent' | 'symbol'>('score');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [filterRating, setFilterRating] = useState<string>('all');
   const [filterSector, setFilterSector] = useState<string>('all');
+  const [showAutoSuggestion, setShowAutoSuggestion] = useState(false);
+  const [hasShownAutoSuggestion, setHasShownAutoSuggestion] = useState(false);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -147,6 +153,17 @@ export default function ScreeningResultsWithPolling({ sessionId, userEmail }: Sc
 
   const sectors = [...new Set(results.map(r => r.sector))].sort();
   const ratings = ['STRONG BUY', 'BUY', 'WEAK BUY', 'HOLD', 'WEAK SELL', 'SELL', 'STRONG SELL'];
+
+  // Show auto-suggestion modal when screening completes with high-scoring stocks
+  useEffect(() => {
+    if (session?.status === 'completed' && results.length > 0 && !hasShownAutoSuggestion) {
+      const highScoringStocks = results.filter(stock => stock.score >= 85);
+      if (highScoringStocks.length > 0) {
+        setShowAutoSuggestion(true);
+        setHasShownAutoSuggestion(true);
+      }
+    }
+  }, [session?.status, results, hasShownAutoSuggestion]);
 
   // Helper function to render results table
   const renderResults = (resultsToShow: ScreeningResultWithSession[], sessionToShow: ScreeningSession | null) => {
@@ -293,6 +310,7 @@ export default function ScreeningResultsWithPolling({ sessionId, userEmail }: Sc
                 <th className="text-left py-2 px-2 text-gray-400">Price</th>
                 <th className="text-left py-2 px-2 text-gray-400">Change %</th>
                 <th className="text-left py-2 px-2 text-gray-400">Sector</th>
+                <th className="text-left py-2 px-2 text-gray-400">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -314,6 +332,14 @@ export default function ScreeningResultsWithPolling({ sessionId, userEmail }: Sc
                     {result.changePercent >= 0 ? '+' : ''}{result.changePercent.toFixed(2)}%
                   </td>
                   <td className="py-2 px-2 text-gray-300">{result.sector}</td>
+                  <td className="py-2 px-2">
+                    <WatchListButton
+                      symbol={result.symbol}
+                      isWatched={isWatched(result.symbol)}
+                      size="sm"
+                      showText={false}
+                    />
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -488,9 +514,17 @@ export default function ScreeningResultsWithPolling({ sessionId, userEmail }: Sc
       <div>
         {debugSection}
         
-
-        
         {renderResults(resultsToShow, sessionToShow)}
+        
+        {/* Auto-suggestion Modal */}
+        <AutoSuggestionModal
+          isOpen={showAutoSuggestion}
+          onClose={() => setShowAutoSuggestion(false)}
+          stocks={resultsToShow}
+          onStocksAdded={(count) => {
+            console.log(`Added ${count} stocks to watchlist`);
+          }}
+        />
         
         {/* Session Info */}
         {sessionToShow && (

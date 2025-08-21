@@ -50,6 +50,19 @@ export default function Navigation() {
             >
               Screener
             </Link>
+            {user && (
+              <Link
+                href="/watchlist"
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
+                  isActive('/watchlist')
+                    ? 'bg-purple-600 text-white'
+                    : 'text-gray-300 hover:text-white hover:bg-gray-700'
+                }`}
+              >
+                <span>⭐</span>
+                Watchlist
+              </Link>
+            )}
             
             {/* Auth Links */}
             {!loading && (

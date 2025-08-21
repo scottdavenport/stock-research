@@ -2,6 +2,7 @@
 
 import { ScreeningResponseWithSession } from '../types/stock';
 import { useRouter } from 'next/navigation';
+import WatchListButton from './WatchListButton';
 
 interface ScreeningResultsProps {
   data: ScreeningResponseWithSession;
@@ -218,8 +219,13 @@ export default function ScreeningResults({ data }: ScreeningResultsProps) {
                 </div>
               </div>
 
-              {/* Research Button */}
-              <div className="flex justify-end">
+              {/* Action Buttons */}
+              <div className="flex justify-end gap-2">
+                <WatchListButton
+                  symbol={stock.symbol}
+                  size="md"
+                  showText={false}
+                />
                 <button
                   onClick={() => handleResearchStock(stock.symbol)}
                   className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2"
