@@ -418,7 +418,9 @@ export default function ScreeningResultsWithPolling({ sessionId, userEmail }: Sc
         {debugSection}
         <div className="bg-gray-800 rounded-lg p-8 border border-gray-700">
           <div className="text-center">
-            <LoadingSpinner size="large" />
+            <div className="flex justify-center mb-4">
+              <LoadingSpinner size="large" />
+            </div>
             <h2 className="text-xl font-bold text-white mt-4 mb-2">
               {session?.status === 'completed' ? 'Loading Results...' : 'Screening in Progress'}
             </h2>
@@ -429,7 +431,7 @@ export default function ScreeningResultsWithPolling({ sessionId, userEmail }: Sc
             {session && (
               <div className="space-y-2 text-sm text-gray-300">
                 <p>Session ID: {session.id}</p>
-                <p>Started: {new Date(session.createdAt).toLocaleString()}</p>
+                <p>Started: {session.createdAt ? new Date(session.createdAt).toLocaleString() : 'N/A'}</p>
                 {session.processingTimeSeconds > 0 && (
                   <p>Processing time: {formatTime(session.processingTimeSeconds)}</p>
                 )}
@@ -457,7 +459,7 @@ export default function ScreeningResultsWithPolling({ sessionId, userEmail }: Sc
               <h3 className="text-blue-400 font-semibold mb-2">📈 Previous Results Available</h3>
               <p className="text-blue-300 text-sm">
                 Showing {latestResults.length} results from your most recent completed screening 
-                ({new Date(latestSession?.completedAt || latestSession?.createdAt || '').toLocaleString()})
+                ({latestSession?.completedAt || latestSession?.createdAt ? new Date(latestSession?.completedAt || latestSession?.createdAt).toLocaleString() : 'N/A'})
               </p>
             </div>
             {renderResults(latestResults, latestSession)}
@@ -495,7 +497,7 @@ export default function ScreeningResultsWithPolling({ sessionId, userEmail }: Sc
               <h3 className="text-blue-400 font-semibold mb-2">📈 Previous Results Available</h3>
               <p className="text-blue-300 text-sm">
                 Showing {latestResults.length} results from your most recent completed screening 
-                ({new Date(latestSession?.completedAt || latestSession?.createdAt || '').toLocaleString()})
+                ({latestSession?.completedAt || latestSession?.createdAt ? new Date(latestSession?.completedAt || latestSession?.createdAt).toLocaleString() : 'N/A'})
               </p>
             </div>
             {renderResults(latestResults, latestSession)}
@@ -520,7 +522,7 @@ export default function ScreeningResultsWithPolling({ sessionId, userEmail }: Sc
               <span className="font-medium">Session ID:</span> {session.id}
             </div>
             <div>
-              <span className="font-medium">Started:</span> {new Date(session.createdAt).toLocaleString()}
+              <span className="font-medium">Started:</span> {session.createdAt ? new Date(session.createdAt).toLocaleString() : 'N/A'}
             </div>
             <div>
               <span className="font-medium">Completed:</span> {session.completedAt ? new Date(session.completedAt).toLocaleString() : 'N/A'}
@@ -544,7 +546,7 @@ export default function ScreeningResultsWithPolling({ sessionId, userEmail }: Sc
             <h3 className="text-blue-400 font-semibold mb-2">📈 Latest Results Available</h3>
             <p className="text-blue-300 text-sm">
               Showing {latestResults.length} results from your most recent completed screening 
-              ({new Date(latestSession?.completedAt || latestSession?.createdAt || '').toLocaleString()})
+              ({latestSession?.completedAt || latestSession?.createdAt ? new Date(latestSession?.completedAt || latestSession?.createdAt).toLocaleString() : 'N/A'})
             </p>
           </div>
           {renderResults(latestResults, latestSession)}

@@ -175,39 +175,63 @@ export async function POST(request: NextRequest) {
         throw new Error('The screening workflow returned an invalid response format. Please try again.');
       }
 
-      // Transform the n8n response to match our expected format
-      const transformedResponse = {
-        success: true,
-        timestamp: new Date().toISOString(),
-        summary: {
-          totalScreened: data.summary?.totalScreened || 0,
-          averageScore: data.summary?.averageScore || 0,
-          strongBuys: data.summary?.ratings?.strongBuy || 0,
-          buys: data.summary?.ratings?.buy || 0,
-          topSector: data.summary?.topSector || 'N/A'
-        },
-        results: data.results?.map((stock: N8NStockData, index: number) => ({
-          rank: index + 1,
-          symbol: stock.symbol,
-          name: stock.name,
-          sector: stock.sector,
-          score: stock.score,
-          rating: stock.rating,
-          price: stock.price,
-          changePercent: stock.changePercent,
-          marketCap: stock.marketCap,
-          peRatio: stock.peRatio,
-          week52High: stock.week52High,
-          distanceFrom52High: stock.distanceFrom52High,
-          scoreBreakdown: {
-            momentum: stock.scoreBreakdown?.momentum || 0,
-            quality: stock.scoreBreakdown?.quality || 0,
-            technical: stock.scoreBreakdown?.technical || 0
-          }
-        })) || []
-      };
+      // Check if this is an Early Success Response (has sessionId)
+      if (data.sessionId && data.success && data.message === 'Stock screening started successfully') {
+        console.log('✅ Received Early Success Response with sessionId:', data.sessionId);
+        return NextResponse.json({
+          success: true,
+          sessionId: data.sessionId,
+          status: 'processing',
+          message: data.message,
+          timestamp: data.timestamp || new Date().toISOString()
+        });
+      }
 
-      return NextResponse.json(transformedResponse);
+      // Check if this is a completed screening response (has summary and results)
+      if (data.summary && Array.isArray(data.results)) {
+        console.log('📊 Received completed screening response');
+        // Transform the n8n response to match our expected format
+        const transformedResponse = {
+          success: true,
+          timestamp: new Date().toISOString(),
+          summary: {
+            totalScreened: data.summary?.totalScreened || 0,
+            averageScore: data.summary?.averageScore || 0,
+            strongBuys: data.summary?.ratings?.strongBuy || 0,
+            buys: data.summary?.ratings?.buy || 0,
+            topSector: data.summary?.topSector || 'N/A'
+          },
+          results: data.results?.map((stock: N8NStockData, index: number) => ({
+            rank: index + 1,
+            symbol: stock.symbol,
+            name: stock.name,
+            sector: stock.sector,
+            score: stock.score,
+            rating: stock.rating,
+            price: stock.price,
+            changePercent: stock.changePercent,
+            marketCap: stock.marketCap,
+            peRatio: stock.peRatio,
+            week52High: stock.week52High,
+            distanceFrom52High: stock.distanceFrom52High,
+            scoreBreakdown: {
+              momentum: stock.scoreBreakdown?.momentum || 0,
+              quality: stock.scoreBreakdown?.quality || 0,
+              technical: stock.scoreBreakdown?.technical || 0
+            }
+          })) || []
+        };
+
+        return NextResponse.json(transformedResponse);
+      }
+
+      // If we get here, it's an unknown response format
+      console.log('⚠️ Unknown response format from n8n:', data);
+      return NextResponse.json({
+        success: false,
+        error: 'The screening workflow returned an unexpected response format',
+        timestamp: new Date().toISOString()
+      }, { status: 500 });
 
     } catch (fetchError) {
       clearTimeout(timeoutId);

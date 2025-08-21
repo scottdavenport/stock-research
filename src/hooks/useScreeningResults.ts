@@ -304,6 +304,9 @@ export function useScreeningResults(sessionId: string | null, userEmail: string 
 
       setResults(transformedResults);
       
+      // Update session state with latest data
+      setSession(sessionData);
+      
       // Handle different session statuses
       if (sessionData.status === 'failed') {
         setError('Screening failed. Please try again.');

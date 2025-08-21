@@ -122,6 +122,8 @@ async function performScreeningRequest(formData: ScreeningFormData, userEmail: s
     try {
       data = await response.json();
       console.log('n8n workflow response data:', data);
+      console.log('Response keys:', Object.keys(data));
+      console.log('Response raw text:', JSON.stringify(data, null, 2));
       console.log('sessionId from response:', data.sessionId);
       console.log('sessionId type:', typeof data.sessionId);
     } catch (jsonError) {
@@ -137,16 +139,42 @@ async function performScreeningRequest(formData: ScreeningFormData, userEmail: s
       console.log('📊 Received completed screening response with summary:', data.summary);
       console.log('📈 Results count:', data.results.length);
       
-      // For completed screenings, we need to find the session in the database
-      // The sessionId might be in the summary or we need to look it up
-      if (data.summary.sessionId) {
-        sessionId = data.summary.sessionId;
+      // Check if this is a real completed screening with results
+      if (data.results.length > 0) {
+        console.log('🎉 Screening completed with results! Displaying immediately.');
+        // This is a completed screening with actual results
+        // We don't need a sessionId since we have the results
+        sessionId = null;
       } else {
-        // Since this is a completed screening, we should find the most recent session
-        // that matches this user and timestamp
-        console.log('🔍 Completed screening detected - will find session in database');
-        console.log('🔍 Looking for session created around:', data.timestamp);
-        sessionId = null; // Let the polling hook find the session
+        console.log('⏳ Screening completed but no results yet - will poll for updates');
+        // This is a completed screening but no results yet
+        // We need to find the session and poll for results
+        
+        // For completed screenings, we need to find the session in the database
+        // The sessionId might be in the summary or we need to look it up
+        if (data.summary.sessionId) {
+          sessionId = data.summary.sessionId;
+        } else if (data.sessionId) {
+          // Sometimes the sessionId is still present even in completed responses
+          sessionId = data.sessionId;
+          console.log('✅ Found sessionId in completed response:', sessionId);
+        } else {
+          // Since this is a completed screening, we should find the most recent session
+          // that matches this user and timestamp
+          console.log('🔍 Completed screening detected - will find session in database');
+          console.log('🔍 Looking for session created around:', data.timestamp);
+          
+          // Check if sessionId might be in a different field
+          if (data.id) {
+            sessionId = data.id;
+            console.log('✅ Found sessionId in "id" field:', sessionId);
+          } else if (data.session_id) {
+            sessionId = data.session_id;
+            console.log('✅ Found sessionId in "session_id" field:', sessionId);
+          } else {
+            sessionId = null; // Let the polling hook find the session
+          }
+        }
       }
     } else if (data.sessionId && data.success) {
       // This is the Early Success Response from n8n
@@ -196,9 +224,12 @@ async function performScreeningRequest(formData: ScreeningFormData, userEmail: s
     const apiResponse: ScreeningSessionResponse = {
       success: data.success,
       sessionId: sessionId,
-      status: data.status || 'processing',
+      status: data.status || (data.results && data.results.length > 0 ? 'completed' : 'processing'),
       message: data.message,
-      timestamp: data.timestamp
+      timestamp: data.timestamp,
+      // Include results if they're available immediately
+      results: data.results && data.results.length > 0 ? data.results : undefined,
+      summary: data.summary
     };
 
     console.log('🎯 Final API response:', apiResponse);

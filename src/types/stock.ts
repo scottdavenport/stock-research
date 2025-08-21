@@ -188,10 +188,12 @@ export interface ScreeningResultWithSession {
 
 export interface ScreeningSessionResponse {
   success: boolean;
-  sessionId: string;
+  sessionId: string | null;
   status: 'pending' | 'processing' | 'completed' | 'failed';
   message?: string;
   timestamp: string;
+  results?: ScreeningResultWithSession[];
+  summary?: ScreeningSummary;
 }
 
 export interface ScreeningResultsResponse {
