@@ -190,29 +190,37 @@ export default function ScreeningResultsWithPolling({ sessionId, userEmail }: Sc
         }
       });
 
+    // Calculate summary statistics from actual results
+    const totalStocks = resultsToShow.length;
+    const buyRatedStocks = resultsToShow.filter(result => 
+      ['STRONG BUY', 'BUY', 'WEAK BUY'].includes(result.rating)
+    ).length;
+    const buyPercentage = totalStocks > 0 ? (buyRatedStocks / totalStocks) * 100 : 0;
+    const averageScore = totalStocks > 0 
+      ? resultsToShow.reduce((sum, result) => sum + result.score, 0) / totalStocks 
+      : 0;
+
     return (
       <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
         {/* Summary Cards */}
-        {sessionToShow && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-gray-700 rounded-lg p-4 text-center">
-              <div className="text-2xl font-bold text-white">{sessionToShow.totalStocksScreened}</div>
-              <div className="text-sm text-gray-400">Total Screened</div>
-            </div>
-            <div className="bg-gray-700 rounded-lg p-4 text-center">
-              <div className="text-2xl font-bold text-green-400">{sessionToShow.totalBuyRated}</div>
-              <div className="text-sm text-gray-400">Buy Rated</div>
-            </div>
-            <div className="bg-gray-700 rounded-lg p-4 text-center">
-              <div className="text-2xl font-bold text-blue-400">{sessionToShow.buyPercentage.toFixed(1)}%</div>
-              <div className="text-sm text-gray-400">Buy Percentage</div>
-            </div>
-            <div className="bg-gray-700 rounded-lg p-4 text-center">
-              <div className="text-2xl font-bold text-purple-400">{sessionToShow.averageScore.toFixed(1)}</div>
-              <div className="text-sm text-gray-400">Avg Score</div>
-            </div>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <div className="bg-gray-700 rounded-lg p-4 text-center">
+            <div className="text-2xl font-bold text-white">{totalStocks}</div>
+            <div className="text-sm text-gray-400">Total Screened</div>
           </div>
-        )}
+          <div className="bg-gray-700 rounded-lg p-4 text-center">
+            <div className="text-2xl font-bold text-green-400">{buyRatedStocks}</div>
+            <div className="text-sm text-gray-400">Buy Rated</div>
+          </div>
+          <div className="bg-gray-700 rounded-lg p-4 text-center">
+            <div className="text-2xl font-bold text-blue-400">{buyPercentage.toFixed(1)}%</div>
+            <div className="text-sm text-gray-400">Buy Percentage</div>
+          </div>
+          <div className="bg-gray-700 rounded-lg p-4 text-center">
+            <div className="text-2xl font-bold text-purple-400">{averageScore.toFixed(1)}</div>
+            <div className="text-sm text-gray-400">Avg Score</div>
+          </div>
+        </div>
 
         {/* Filters and Controls */}
         <div className="flex flex-wrap gap-4 mb-6 items-center">
