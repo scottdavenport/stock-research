@@ -71,7 +71,7 @@ export default function StockForm({ onSubmit, isLoading, initialSymbol }: StockF
         <button
           type="submit"
           disabled={isLoading || !symbol.trim()}
-          className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200"
+          className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-gray-700 disabled:cursor-not-allowed border border-purple-500 hover:border-purple-600 disabled:border-gray-600 text-white font-medium py-3 px-4 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-50"
         >
           {isLoading ? 'Researching...' : 'Research Stock'}
         </button>

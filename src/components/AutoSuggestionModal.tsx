@@ -184,23 +184,25 @@ export default function AutoSuggestionModal({
             >
               Maybe Later
             </button>
-            <button
-              onClick={handleAddSelected}
-              disabled={isLoading || selectedStocks.length === 0}
-              className="flex-1 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-            >
-              {isLoading ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  Adding...
-                </>
-              ) : (
-                <>
-                  <span>★</span>
-                  Add {selectedStocks.length} to Watchlist
-                </>
-              )}
-            </button>
+                         <button
+               onClick={handleAddSelected}
+               disabled={isLoading || selectedStocks.length === 0}
+               className="flex-1 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 border border-amber-400 hover:border-amber-500 text-white rounded-lg font-medium transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-50 flex items-center justify-center gap-2"
+             >
+               {isLoading ? (
+                 <>
+                   <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                   Adding...
+                 </>
+               ) : (
+                 <>
+                   <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                     <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                   </svg>
+                   Add {selectedStocks.length} to Watchlist
+                 </>
+               )}
+             </button>
           </div>
         </div>
       </div>

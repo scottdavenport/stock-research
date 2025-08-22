@@ -233,8 +233,11 @@ export default function WatchListPage() {
           </p>
           <button
             onClick={() => router.push('/screening')}
-            className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-gray-800 hover:bg-gray-700 border border-gray-600 hover:border-gray-500 text-gray-200 hover:text-white rounded-lg font-medium transition-all duration-200 shadow-sm hover:shadow-md"
           >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
             Run Stock Screening
           </button>
         </div>
@@ -251,8 +254,11 @@ export default function WatchListPage() {
                   <button
                     onClick={handleRemoveSelected}
                     disabled={isRemoving}
-                    className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 border border-red-500 hover:border-red-600 text-white rounded text-sm font-medium transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-50"
                   >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
                     {isRemoving ? 'Removing...' : `Remove ${selectedStocks.length}`}
                   </button>
                 )}
@@ -272,8 +278,11 @@ export default function WatchListPage() {
                 </button>
                 <button
                   onClick={handleExportCSV}
-                  className="bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-600 hover:border-gray-500 text-gray-200 hover:text-white rounded text-sm font-medium transition-all duration-200 shadow-sm hover:shadow-md"
                 >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
                   Export CSV
                 </button>
               </div>
@@ -415,24 +424,27 @@ export default function WatchListPage() {
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => handleResearchStock(stock.symbol)}
-                            className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-3 py-1 rounded text-sm font-medium transition-colors"
-                          >
-                            Research
-                          </button>
-                          <WatchListButton
-                            symbol={stock.symbol}
-                            isWatched={true}
-                            size="sm"
-                            onToggle={(isWatched) => {
-                              if (!isWatched) {
-                                setWatchlist(prev => prev.filter(s => s.symbol !== stock.symbol));
-                              }
-                            }}
-                          />
-                        </div>
+                                                 <div className="flex items-center gap-2">
+                           <button
+                             onClick={() => handleResearchStock(stock.symbol)}
+                             className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-600 hover:border-gray-500 text-gray-200 hover:text-white rounded text-sm font-medium transition-all duration-200 shadow-sm hover:shadow-md"
+                           >
+                             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                             </svg>
+                             Research
+                           </button>
+                           <WatchListButton
+                             symbol={stock.symbol}
+                             isWatched={true}
+                             size="sm"
+                             onToggle={(isWatched) => {
+                               if (!isWatched) {
+                                 setWatchlist(prev => prev.filter(s => s.symbol !== stock.symbol));
+                               }
+                             }}
+                           />
+                         </div>
                       </td>
                     </tr>
                   ))}

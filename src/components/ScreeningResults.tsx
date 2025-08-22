@@ -220,7 +220,7 @@ export default function ScreeningResults({ data }: ScreeningResultsProps) {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex justify-end gap-2">
+              <div className="flex justify-end gap-3">
                 <WatchListButton
                   symbol={stock.symbol}
                   size="md"
@@ -228,9 +228,11 @@ export default function ScreeningResults({ data }: ScreeningResultsProps) {
                 />
                 <button
                   onClick={() => handleResearchStock(stock.symbol)}
-                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2"
+                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-800 hover:bg-gray-700 border border-gray-600 hover:border-gray-500 text-gray-200 hover:text-white rounded-lg text-sm font-medium transition-all duration-200 shadow-sm hover:shadow-md"
                 >
-                  <span>🔍</span>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
                   Research {stock.symbol}
                 </button>
               </div>

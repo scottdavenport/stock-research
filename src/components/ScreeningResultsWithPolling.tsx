@@ -291,8 +291,11 @@ export default function ScreeningResultsWithPolling({ sessionId, userEmail }: Sc
 
           <button
             onClick={() => exportToCSV()}
-            className="bg-green-600 hover:bg-green-700 text-white px-4 py-1 rounded text-sm font-medium transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-600 hover:border-gray-500 text-gray-200 hover:text-white rounded text-sm font-medium transition-all duration-200 shadow-sm hover:shadow-md"
           >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
             Export CSV
           </button>
         </div>
@@ -333,12 +336,14 @@ export default function ScreeningResultsWithPolling({ sessionId, userEmail }: Sc
                   </td>
                   <td className="py-2 px-2 text-gray-300">{result.sector}</td>
                   <td className="py-2 px-2">
-                    <WatchListButton
-                      symbol={result.symbol}
-                      isWatched={isWatched(result.symbol)}
-                      size="sm"
-                      showText={false}
-                    />
+                    <div className="flex justify-center">
+                      <WatchListButton
+                        symbol={result.symbol}
+                        isWatched={isWatched(result.symbol)}
+                        size="sm"
+                        showText={false}
+                      />
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -441,7 +446,6 @@ export default function ScreeningResultsWithPolling({ sessionId, userEmail }: Sc
   if ((isLoading || isPolling) && results.length === 0 && latestResults.length === 0) {
     return (
       <div>
-        {debugSection}
         <div className="bg-gray-800 rounded-lg p-8 border border-gray-700">
           <div className="text-center">
             <div className="flex justify-center mb-4">
@@ -468,7 +472,7 @@ export default function ScreeningResultsWithPolling({ sessionId, userEmail }: Sc
             {(session?.status === 'processing' || session?.status === 'running') && (
               <div className="mt-6">
                 <div className="w-full bg-gray-700 rounded-full h-2 mb-2">
-                  <div className="bg-gradient-to-r from-purple-500 to-blue-500 h-2 rounded-full animate-pulse"></div>
+                  <div className="bg-gray-500 h-2 rounded-full animate-pulse"></div>
                 </div>
                 <p className="text-xs text-gray-400">
                   This may take 5-10 minutes for large batches...
@@ -476,6 +480,11 @@ export default function ScreeningResultsWithPolling({ sessionId, userEmail }: Sc
               </div>
             )}
           </div>
+        </div>
+        
+        {/* Debug info moved below loading state */}
+        <div className="mt-8">
+          {debugSection}
         </div>
       </div>
     );
@@ -485,7 +494,6 @@ export default function ScreeningResultsWithPolling({ sessionId, userEmail }: Sc
   if (error) {
     return (
       <div>
-        {debugSection}
         <div className="bg-red-900/20 border border-red-500 rounded-lg p-6">
           <div className="flex items-start">
             <div className="text-red-400 text-lg mr-3 mt-0.5">⚠️</div>
@@ -501,6 +509,11 @@ export default function ScreeningResultsWithPolling({ sessionId, userEmail }: Sc
             </div>
           </div>
         </div>
+        
+        {/* Debug info moved below error state */}
+        <div className="mt-8">
+          {debugSection}
+        </div>
       </div>
     );
   }
@@ -512,8 +525,6 @@ export default function ScreeningResultsWithPolling({ sessionId, userEmail }: Sc
     
     return (
       <div>
-        {debugSection}
-        
         {renderResults(resultsToShow, sessionToShow)}
         
         {/* Auto-suggestion Modal */}
@@ -526,26 +537,31 @@ export default function ScreeningResultsWithPolling({ sessionId, userEmail }: Sc
           }}
         />
         
-        {/* Session Info */}
-        {sessionToShow && (
-          <div className="mt-6 p-4 bg-gray-700/50 rounded-lg">
-            <h4 className="text-sm font-semibold text-gray-300 mb-2">Session Information</h4>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs text-gray-400">
-              <div>
-                <span className="font-medium">Session ID:</span> {sessionToShow.id}
-              </div>
-              <div>
-                <span className="font-medium">Started:</span> {sessionToShow.createdAt ? new Date(sessionToShow.createdAt).toLocaleString() : 'N/A'}
-              </div>
-              <div>
-                <span className="font-medium">Completed:</span> {sessionToShow.completedAt ? new Date(sessionToShow.completedAt).toLocaleString() : 'N/A'}
-              </div>
-              <div>
-                <span className="font-medium">Processing Time:</span> {formatTime(sessionToShow.processingTimeSeconds)}
+        {/* Debug and Session Info - Moved below results */}
+        <div className="mt-8 space-y-4">
+          {debugSection}
+          
+          {/* Session Info */}
+          {sessionToShow && (
+            <div className="p-4 bg-gray-700/50 rounded-lg">
+              <h4 className="text-sm font-semibold text-gray-300 mb-2">Session Information</h4>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs text-gray-400">
+                <div>
+                  <span className="font-medium">Session ID:</span> {sessionToShow.id}
+                </div>
+                <div>
+                  <span className="font-medium">Started:</span> {sessionToShow.createdAt ? new Date(sessionToShow.createdAt).toLocaleString() : 'N/A'}
+                </div>
+                <div>
+                  <span className="font-medium">Completed:</span> {sessionToShow.completedAt ? new Date(sessionToShow.completedAt).toLocaleString() : 'N/A'}
+                </div>
+                <div>
+                  <span className="font-medium">Processing Time:</span> {formatTime(sessionToShow.processingTimeSeconds)}
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     );
   }
@@ -553,9 +569,13 @@ export default function ScreeningResultsWithPolling({ sessionId, userEmail }: Sc
   // No results state
   return (
     <div>
-      {debugSection}
       <div className="bg-gray-800 rounded-lg p-8 border border-gray-700 text-center">
         <p className="text-gray-400">No screening results available yet.</p>
+      </div>
+      
+      {/* Debug info moved below no results state */}
+      <div className="mt-8">
+        {debugSection}
       </div>
     </div>
   );

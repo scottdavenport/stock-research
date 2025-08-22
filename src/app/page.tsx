@@ -85,9 +85,12 @@ function HomeContent() {
             <div className="mt-4">
               <a 
                 href="/screening" 
-                className="inline-flex items-center px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-700 border border-purple-500 hover:border-purple-600 text-white font-semibold rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl"
               >
-                🚀 Try our Stock Screener
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                Try our Stock Screener
               </a>
             </div>
           </div>

@@ -125,10 +125,10 @@ export default function WatchListButton({
       onClick={handleToggle}
       disabled={isLoading}
       className={`
-        flex items-center gap-2 px-3 py-2 rounded-lg font-medium transition-all duration-200
+        inline-flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg font-medium transition-all duration-200 shadow-sm hover:shadow-md border
         ${isWatched 
-          ? 'bg-purple-600 hover:bg-purple-700 text-white' 
-          : 'bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white'
+          ? 'bg-amber-500/10 border-amber-500/30 hover:bg-amber-500/20 hover:border-amber-500/50 text-amber-400' 
+          : 'bg-gray-800 border-gray-600 hover:bg-gray-700 hover:border-gray-500 text-gray-400 hover:text-gray-200'
         }
         ${isLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
         ${showText ? 'min-w-[120px]' : ''}
@@ -137,14 +137,18 @@ export default function WatchListButton({
     >
       {isLoading ? (
         <div className={`${sizeClasses[size]} flex items-center justify-center`}>
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+          <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent"></div>
         </div>
       ) : (
         <div className={`${sizeClasses[size]} flex items-center justify-center`}>
           {isWatched ? (
-            <span className="text-yellow-400">★</span>
+            <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+            </svg>
           ) : (
-            <span className="text-gray-400">☆</span>
+            <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" opacity="0.3"/>
+            </svg>
           )}
         </div>
       )}

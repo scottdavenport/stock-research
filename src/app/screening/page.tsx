@@ -89,8 +89,8 @@ export default function ScreeningPage() {
 
           {/* Main Content */}
           <div className="max-w-7xl mx-auto">
-            {/* Form Section - More compact */}
-            <div className="mb-6 max-w-2xl mx-auto">
+            {/* Compact Filter Bar */}
+            <div className="mb-6">
               <ScreeningForm onSubmit={handleSubmit} isLoading={isLoading} />
             </div>
 
