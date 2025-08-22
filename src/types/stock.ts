@@ -85,7 +85,7 @@ export interface ScreeningResult {
   name: string;
   sector: string;
   score: number;
-  rating: 'STRONG BUY' | 'BUY' | 'WEAK BUY' | 'HOLD' | 'AVOID';
+  rating: 'STRONG BUY' | 'BUY' | 'WEAK BUY' | 'HOLD' | 'WEAK SELL' | 'SELL' | 'STRONG SELL';
   price: number;
   changePercent: number;
   marketCap: number;
@@ -96,6 +96,47 @@ export interface ScreeningResult {
     momentum: number;
     quality: number;
     technical: number;
+  };
+  
+  // Enhanced data from database
+  signalStrength?: number;
+  rankPosition?: number;
+  dayHigh?: number;
+  dayLow?: number;
+  week52Low?: number;
+  volume?: number;
+  avgVolume?: number;
+  relativeVolume?: number;
+  forwardPe?: number;
+  beta?: number;
+  epsGrowth?: number;
+  revenueGrowth?: number;
+  roe?: number;
+  operatingMargin?: number;
+  debtToEquity?: number;
+  ytdReturn?: number;
+  mtdReturn?: number;
+  priceRelative4w?: number;
+  priceRelative13w?: number;
+  
+  // Detailed analysis data
+  scoreBreakdown?: {
+    momentum: number;
+    quality: number;
+    technical: number;
+    [key: string]: number;
+  };
+  technicals?: {
+    [key: string]: any;
+  };
+  signals?: {
+    [key: string]: any;
+  };
+  insights?: {
+    [key: string]: any;
+  };
+  recommendations?: {
+    [key: string]: any;
   };
 }
 
@@ -163,6 +204,7 @@ export interface ScreeningSession {
   totalBuyRated: number;
   buyPercentage: number;
   averageScore: number;
+  averageBuyScore: number;
   processingTimeSeconds: number;
   createdAt: string;
   completedAt?: string;
@@ -171,6 +213,7 @@ export interface ScreeningSession {
 }
 
 export interface ScreeningResultWithSession {
+  rank: number;
   symbol: string;
   name: string;
   score: number;
@@ -179,11 +222,41 @@ export interface ScreeningResultWithSession {
   changePercent: number;
   sector: string;
   rankPosition: number;
+  marketCap: number;
+  peRatio: number | null;
+  week52High: number | null;
+  distanceFrom52High: string | null;
   scoreBreakdown: {
     momentum: number;
     quality: number;
     technical: number;
   };
+  
+  // Enhanced fields from database
+  signalStrength?: number;
+  dayHigh?: number;
+  dayLow?: number;
+  week52Low?: number;
+  volume?: number;
+  avgVolume?: number;
+  relativeVolume?: number;
+  forwardPe?: number;
+  beta?: number;
+  epsGrowth?: number;
+  revenueGrowth?: number;
+  roe?: number;
+  operatingMargin?: number;
+  debtToEquity?: number;
+  ytdReturn?: number;
+  mtdReturn?: number;
+  priceRelative4w?: number;
+  priceRelative13w?: number;
+  
+  // Detailed analysis data
+  technicals?: Record<string, any>;
+  signals?: Record<string, any>;
+  insights?: Record<string, any>;
+  recommendations?: Record<string, any>;
 }
 
 export interface ScreeningSessionResponse {

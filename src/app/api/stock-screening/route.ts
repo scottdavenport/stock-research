@@ -93,6 +93,15 @@ export async function POST(request: NextRequest) {
         if (response.status === 500) {
           console.log('n8n returned 500 error:', errorText);
           
+          // Check for specific n8n workflow errors that should fail immediately
+          if (errorText.includes('workflow not found') || 
+              errorText.includes('authentication failed') ||
+              errorText.includes('invalid webhook') ||
+              errorText.includes('configuration error') ||
+              errorText.includes('database connection failed')) {
+            throw new Error(`n8n workflow error: ${errorText}. Please check the workflow configuration and try again.`);
+          }
+          
           // Check for cancelled execution
           if (errorText.includes('cancelled') || errorText.includes('cancellation')) {
             console.log('n8n execution was cancelled - this may be normal for large batches');
@@ -121,13 +130,22 @@ export async function POST(request: NextRequest) {
             }, { status: 202 }); // 202 Accepted
           }
           
-                  // Handle other n8n errors
-        try {
-          const errorData = JSON.parse(errorText);
-          throw new Error(`n8n workflow error: ${errorData.message || 'Unknown error occurred'}`);
-        } catch {
-          throw new Error(`n8n API error: ${response.status} - ${errorText}`);
+          // For smaller batches, treat 500 errors as actual failures
+          try {
+            const errorData = JSON.parse(errorText);
+            throw new Error(`n8n workflow error: ${errorData.message || 'Unknown error occurred'}`);
+          } catch {
+            throw new Error(`n8n API error: ${response.status} - ${errorText}`);
+          }
         }
+        
+        // Handle other HTTP errors
+        if (response.status === 404) {
+          throw new Error('The screening workflow endpoint was not found. Please check the n8n workflow configuration.');
+        }
+        
+        if (response.status === 401 || response.status === 403) {
+          throw new Error('Authentication failed. Please check the n8n workflow credentials.');
         }
         
         throw new Error(`n8n API error: ${response.status} - ${errorText}`);
@@ -162,7 +180,7 @@ export async function POST(request: NextRequest) {
           }, { status: 202 }); // 202 Accepted
         }
         
-        // If we can't parse JSON, it might be a workflow error
+        // For smaller batches, treat JSON parse errors as actual failures
         const errorMessage = rawResponseText.includes('Create Screening Session') 
           ? 'The screening workflow encountered a configuration error. This is likely due to an issue with the n8n workflow setup. Please try again or contact support if the problem persists.'
           : 'The screening workflow encountered an error and returned invalid data. This may be due to a configuration issue in the workflow. Please try again or contact support if the problem persists.';

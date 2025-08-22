@@ -24,13 +24,24 @@ export default function ScreeningResults({ data }: ScreeningResultsProps) {
     return `$${marketCap.toFixed(0)}`;
   };
 
+  const formatVolume = (volume: number) => {
+    if (volume >= 1000000) {
+      return `${(volume / 1000000).toFixed(1)}M`;
+    } else if (volume >= 1000) {
+      return `${(volume / 1000).toFixed(1)}K`;
+    }
+    return volume.toLocaleString();
+  };
+
   const getRatingColor = (rating: string) => {
     switch (rating) {
       case 'STRONG BUY': return 'text-green-400 bg-green-900/20 border-green-500';
       case 'BUY': return 'text-blue-400 bg-blue-900/20 border-blue-500';
       case 'WEAK BUY': return 'text-yellow-400 bg-yellow-900/20 border-yellow-500';
       case 'HOLD': return 'text-gray-400 bg-gray-900/20 border-gray-500';
-      case 'AVOID': return 'text-red-400 bg-red-900/20 border-red-500';
+      case 'WEAK SELL': return 'text-orange-400 bg-orange-900/20 border-orange-500';
+      case 'SELL': return 'text-red-400 bg-red-900/20 border-red-500';
+      case 'STRONG SELL': return 'text-red-500 bg-red-900/30 border-red-600';
       default: return 'text-gray-400 bg-gray-900/20 border-gray-500';
     }
   };
@@ -49,8 +60,15 @@ export default function ScreeningResults({ data }: ScreeningResultsProps) {
     return 'bg-gradient-to-r from-purple-500 to-purple-600 text-white';
   };
 
+  const getMetricColor = (value: number, positiveIsGood: boolean = true) => {
+    if (positiveIsGood) {
+      return value > 0 ? 'text-green-400' : value < 0 ? 'text-red-400' : 'text-gray-400';
+    } else {
+      return value < 0 ? 'text-green-400' : value > 0 ? 'text-red-400' : 'text-gray-400';
+    }
+  };
+
   const handleResearchStock = (symbol: string) => {
-    // Navigate to research page with symbol as URL parameter
     router.push(`/?symbol=${encodeURIComponent(symbol)}`);
   };
 
@@ -108,20 +126,21 @@ export default function ScreeningResults({ data }: ScreeningResultsProps) {
         <div className="p-6 border-b border-gray-700">
           <h3 className="text-xl font-bold text-white">Top Opportunities</h3>
           <p className="text-gray-400 text-sm mt-1">
-            Ranked by momentum + quality score (0-100)
+            Ranked by momentum + quality score (0-100) with comprehensive financial analysis
           </p>
         </div>
 
         <div className="divide-y divide-gray-700">
           {data.results.map((stock, index) => (
             <div key={stock.symbol} className="p-6 hover:bg-gray-750 transition-colors">
+              {/* Header Row */}
               <div className="flex items-start justify-between mb-4">
                 {/* Stock Info */}
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
                     {/* Rank Badge */}
-                    <div className={`px-3 py-1 rounded-full text-sm font-bold ${getRankBadgeColor(stock.rank || index + 1)}`}>
-                      #{stock.rank || index + 1}
+                    <div className={`px-3 py-1 rounded-full text-sm font-bold ${getRankBadgeColor(stock.rankPosition || stock.rank || index + 1)}`}>
+                      #{stock.rankPosition || stock.rank || index + 1}
                     </div>
                     
                     <div className="text-2xl font-bold text-white">{stock.symbol}</div>
@@ -131,6 +150,11 @@ export default function ScreeningResults({ data }: ScreeningResultsProps) {
                     <div className={`text-lg font-bold ${getScoreColor(stock.score)}`}>
                       {stock.score}/100
                     </div>
+                    {stock.signalStrength && (
+                      <div className="text-sm text-purple-400 font-semibold">
+                        Signal: {stock.signalStrength}/100
+                      </div>
+                    )}
                   </div>
                   
                   <div className="text-gray-300 mb-2">{stock.name}</div>
@@ -149,73 +173,191 @@ export default function ScreeningResults({ data }: ScreeningResultsProps) {
                 </div>
               </div>
 
-              {/* Score Breakdown */}
-              <div className="grid grid-cols-3 gap-4 mb-4">
-                <div>
-                  <div className="text-sm text-gray-400 mb-1">Momentum</div>
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 bg-gray-700 rounded-full h-2">
-                      <div 
-                        className="bg-gradient-to-r from-green-400 to-green-600 h-2 rounded-full" 
-                        style={{ width: `${(stock.scoreBreakdown.momentum / 40) * 100}%` }}
-                      ></div>
+              {/* Enhanced Metrics Grid */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                {/* Price Performance */}
+                <div className="space-y-2">
+                  <h4 className="text-sm font-semibold text-purple-400">Price Performance</h4>
+                  <div className="text-xs space-y-1">
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Day Range:</span>
+                      <span className="text-white">
+                        ${stock.dayLow?.toFixed(2) || 'N/A'} - ${stock.dayHigh?.toFixed(2) || 'N/A'}
+                      </span>
                     </div>
-                    <span className="text-sm text-white font-semibold">{stock.scoreBreakdown.momentum}</span>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">52W Range:</span>
+                      <span className="text-white">
+                        ${stock.week52Low?.toFixed(2) || 'N/A'} - ${stock.week52High?.toFixed(2) || 'N/A'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">From High:</span>
+                      <span className={`${stock.distanceFrom52High ? (parseFloat(stock.distanceFrom52High) > -10 ? 'text-green-400' : 'text-red-400') : 'text-gray-400'}`}>
+                        {stock.distanceFrom52High ? `${stock.distanceFrom52High}%` : 'N/A'}
+                      </span>
+                    </div>
                   </div>
                 </div>
-                
-                <div>
-                  <div className="text-sm text-gray-400 mb-1">Quality</div>
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 bg-gray-700 rounded-full h-2">
-                      <div 
-                        className="bg-gradient-to-r from-blue-400 to-blue-600 h-2 rounded-full" 
-                        style={{ width: `${(stock.scoreBreakdown.quality / 30) * 100}%` }}
-                      ></div>
+
+                {/* Volume Analysis */}
+                <div className="space-y-2">
+                  <h4 className="text-sm font-semibold text-blue-400">Volume Analysis</h4>
+                  <div className="text-xs space-y-1">
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Volume:</span>
+                      <span className="text-white">{stock.volume ? formatVolume(stock.volume) : 'N/A'}</span>
                     </div>
-                    <span className="text-sm text-white font-semibold">{stock.scoreBreakdown.quality}</span>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Avg Volume:</span>
+                      <span className="text-white">{stock.avgVolume ? formatVolume(stock.avgVolume) : 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Rel Volume:</span>
+                      <span className={`${stock.relativeVolume ? (stock.relativeVolume > 1.5 ? 'text-green-400' : stock.relativeVolume < 0.5 ? 'text-red-400' : 'text-gray-400') : 'text-gray-400'}`}>
+                        {stock.relativeVolume ? stock.relativeVolume.toFixed(2) : 'N/A'}
+                      </span>
+                    </div>
                   </div>
                 </div>
-                
-                <div>
-                  <div className="text-sm text-gray-400 mb-1">Technical</div>
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 bg-gray-700 rounded-full h-2">
-                      <div 
-                        className="bg-gradient-to-r from-purple-400 to-purple-600 h-2 rounded-full" 
-                        style={{ width: `${(stock.scoreBreakdown.technical / 30) * 100}%` }}
-                      ></div>
+
+                {/* Valuation Metrics */}
+                <div className="space-y-2">
+                  <h4 className="text-sm font-semibold text-green-400">Valuation</h4>
+                  <div className="text-xs space-y-1">
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">P/E Ratio:</span>
+                      <span className="text-white">{stock.peRatio ? stock.peRatio.toFixed(1) : 'N/A'}</span>
                     </div>
-                    <span className="text-sm text-white font-semibold">{stock.scoreBreakdown.technical}</span>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Forward P/E:</span>
+                      <span className="text-white">{stock.forwardPe ? stock.forwardPe.toFixed(1) : 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Beta:</span>
+                      <span className={`${stock.beta ? (Math.abs(stock.beta - 1) < 0.2 ? 'text-green-400' : 'text-yellow-400') : 'text-gray-400'}`}>
+                        {stock.beta ? stock.beta.toFixed(2) : 'N/A'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Growth & Quality */}
+                <div className="space-y-2">
+                  <h4 className="text-sm font-semibold text-yellow-400">Growth & Quality</h4>
+                  <div className="text-xs space-y-1">
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">EPS Growth:</span>
+                      <span className={`${stock.epsGrowth ? getMetricColor(stock.epsGrowth) : 'text-gray-400'}`}>
+                        {stock.epsGrowth ? `${stock.epsGrowth > 0 ? '+' : ''}${stock.epsGrowth.toFixed(1)}%` : 'N/A'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Revenue Growth:</span>
+                      <span className={`${stock.revenueGrowth ? getMetricColor(stock.revenueGrowth) : 'text-gray-400'}`}>
+                        {stock.revenueGrowth ? `${stock.revenueGrowth > 0 ? '+' : ''}${stock.revenueGrowth.toFixed(1)}%` : 'N/A'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">ROE:</span>
+                      <span className={`${stock.roe ? getMetricColor(stock.roe) : 'text-gray-400'}`}>
+                        {stock.roe ? `${stock.roe.toFixed(1)}%` : 'N/A'}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Additional Metrics */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
-                <div>
-                  <span className="text-gray-400">P/E Ratio:</span>
-                  <span className="text-white ml-1">
-                    {stock.peRatio ? stock.peRatio.toFixed(1) : 'N/A'}
-                  </span>
+              {/* Additional Performance Metrics */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                <div className="space-y-2">
+                  <h4 className="text-sm font-semibold text-indigo-400">Performance</h4>
+                  <div className="text-xs space-y-1">
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">YTD Return:</span>
+                      <span className={`${stock.ytdReturn ? getMetricColor(stock.ytdReturn) : 'text-gray-400'}`}>
+                        {stock.ytdReturn ? `${stock.ytdReturn > 0 ? '+' : ''}${stock.ytdReturn.toFixed(1)}%` : 'N/A'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">MTD Return:</span>
+                      <span className={`${stock.mtdReturn ? getMetricColor(stock.mtdReturn) : 'text-gray-400'}`}>
+                        {stock.mtdReturn ? `${stock.mtdReturn > 0 ? '+' : ''}${stock.mtdReturn.toFixed(1)}%` : 'N/A'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">4W Relative:</span>
+                      <span className={`${stock.priceRelative4w ? getMetricColor(stock.priceRelative4w) : 'text-gray-400'}`}>
+                        {stock.priceRelative4w ? `${stock.priceRelative4w > 0 ? '+' : ''}${stock.priceRelative4w.toFixed(1)}%` : 'N/A'}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <span className="text-gray-400">52W High:</span>
-                  <span className="text-white ml-1">
-                    {stock.week52High ? `$${stock.week52High.toFixed(2)}` : 'N/A'}
-                  </span>
+
+                <div className="space-y-2">
+                  <h4 className="text-sm font-semibold text-orange-400">Financial Health</h4>
+                  <div className="text-xs space-y-1">
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Op Margin:</span>
+                      <span className={`${stock.operatingMargin ? getMetricColor(stock.operatingMargin) : 'text-gray-400'}`}>
+                        {stock.operatingMargin ? `${stock.operatingMargin.toFixed(1)}%` : 'N/A'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Debt/Equity:</span>
+                      <span className={`${stock.debtToEquity ? (stock.debtToEquity < 0.5 ? 'text-green-400' : stock.debtToEquity > 1 ? 'text-red-400' : 'text-yellow-400') : 'text-gray-400'}`}>
+                        {stock.debtToEquity ? stock.debtToEquity.toFixed(2) : 'N/A'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Market Cap:</span>
+                      <span className="text-white">{formatMarketCap(stock.marketCap)}</span>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <span className="text-gray-400">From High:</span>
-                  <span className="text-white ml-1">
-                    {stock.distanceFrom52High ? `${stock.distanceFrom52High}%` : 'N/A'}
-                  </span>
+
+                {/* Score Breakdown */}
+                <div className="space-y-2">
+                  <h4 className="text-sm font-semibold text-purple-400">Score Breakdown</h4>
+                  <div className="text-xs space-y-1">
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Momentum:</span>
+                      <span className="text-green-400">{stock.scoreBreakdown?.momentum || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Quality:</span>
+                      <span className="text-blue-400">{stock.scoreBreakdown?.quality || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Technical:</span>
+                      <span className="text-purple-400">{stock.scoreBreakdown?.technical || 'N/A'}</span>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <span className="text-gray-400">Market Cap:</span>
-                  <span className="text-white ml-1">
-                    {formatMarketCap(stock.marketCap)}
-                  </span>
+
+                {/* Risk Assessment */}
+                <div className="space-y-2">
+                  <h4 className="text-sm font-semibold text-red-400">Risk Assessment</h4>
+                  <div className="text-xs space-y-1">
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Volatility:</span>
+                      <span className={`${stock.beta ? (Math.abs(stock.beta - 1) < 0.2 ? 'text-green-400' : Math.abs(stock.beta - 1) < 0.5 ? 'text-yellow-400' : 'text-red-400') : 'text-gray-400'}`}>
+                        {stock.beta ? (Math.abs(stock.beta - 1) < 0.2 ? 'Low' : Math.abs(stock.beta - 1) < 0.5 ? 'Med' : 'High') : 'N/A'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Leverage:</span>
+                      <span className={`${stock.debtToEquity ? (stock.debtToEquity < 0.5 ? 'text-green-400' : stock.debtToEquity > 1 ? 'text-red-400' : 'text-yellow-400') : 'text-gray-400'}`}>
+                        {stock.debtToEquity ? (stock.debtToEquity < 0.5 ? 'Low' : stock.debtToEquity > 1 ? 'High' : 'Med') : 'N/A'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Downside:</span>
+                      <span className={`${stock.distanceFrom52High ? (parseFloat(stock.distanceFrom52High) > -10 ? 'text-green-400' : parseFloat(stock.distanceFrom52High) > -25 ? 'text-yellow-400' : 'text-red-400') : 'text-gray-400'}`}>
+                        {stock.distanceFrom52High ? (parseFloat(stock.distanceFrom52High) > -10 ? 'Low' : parseFloat(stock.distanceFrom52High) > -25 ? 'Med' : 'High') : 'N/A'}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
 

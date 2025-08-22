@@ -442,55 +442,7 @@ export default function ScreeningResultsWithPolling({ sessionId, userEmail }: Sc
     </div>
   );
 
-  // Loading/Polling State - Only show spinner if no results are available
-  if ((isLoading || isPolling) && results.length === 0 && latestResults.length === 0) {
-    return (
-      <div>
-        <div className="bg-gray-800 rounded-lg p-8 border border-gray-700">
-          <div className="text-center">
-            <div className="flex justify-center mb-4">
-              <LoadingSpinner size="large" />
-            </div>
-            <h2 className="text-xl font-bold text-white mt-4 mb-2">
-              {session?.status === 'completed' ? 'Loading Results...' : 'Screening in Progress'}
-            </h2>
-            <p className="text-gray-400 mb-4">
-              {session ? getProgressMessage(session.status) : 'Initializing...'}
-            </p>
-            
-            {session && (
-              <div className="space-y-2 text-sm text-gray-300">
-                <p>Session ID: {session.id}</p>
-                <p>Started: {session.createdAt ? new Date(session.createdAt).toLocaleString() : 'N/A'}</p>
-                {session.processingTimeSeconds > 0 && (
-                  <p>Processing time: {formatTime(session.processingTimeSeconds)}</p>
-                )}
-              </div>
-            )}
-
-            {/* Progress indicator for processing */}
-            {(session?.status === 'processing' || session?.status === 'running') && (
-              <div className="mt-6">
-                <div className="w-full bg-gray-700 rounded-full h-2 mb-2">
-                  <div className="bg-gray-500 h-2 rounded-full animate-pulse"></div>
-                </div>
-                <p className="text-xs text-gray-400">
-                  This may take 5-10 minutes for large batches...
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
-        
-        {/* Debug info moved below loading state */}
-        <div className="mt-8">
-          {debugSection}
-        </div>
-      </div>
-    );
-  }
-
-  // Error State
+  // Error State - Check for errors first
   if (error) {
     return (
       <div>
@@ -561,6 +513,67 @@ export default function ScreeningResultsWithPolling({ sessionId, userEmail }: Sc
               </div>
             </div>
           )}
+        </div>
+      </div>
+    );
+  }
+
+  // Loading/Polling State - Only show spinner if no results are available and no errors
+  if ((isLoading || isPolling) && results.length === 0 && latestResults.length === 0) {
+    return (
+      <div>
+        <div className="bg-gray-800 rounded-lg p-8 border border-gray-700">
+          <div className="text-center">
+            <div className="flex justify-center mb-4">
+              <LoadingSpinner size="large" />
+            </div>
+            <h2 className="text-xl font-bold text-white mt-4 mb-2">
+              {session?.status === 'completed' ? 'Loading Results...' : 'Screening in Progress'}
+            </h2>
+            <p className="text-gray-400 mb-4">
+              {session ? getProgressMessage(session.status) : 'Initializing...'}
+            </p>
+            
+            {session && (
+              <div className="space-y-2 text-sm text-gray-300">
+                <p>Session ID: {session.id}</p>
+                <p>Started: {session.createdAt ? new Date(session.createdAt).toLocaleString() : 'Initializing...'}</p>
+                {session.processingTimeSeconds > 0 && (
+                  <p>Processing time: {formatTime(session.processingTimeSeconds)}</p>
+                )}
+              </div>
+            )}
+
+            {/* Progress indicator for processing */}
+            {(session?.status === 'processing' || session?.status === 'running') && (
+              <div className="mt-6">
+                <div className="w-full bg-gray-700 rounded-full h-2 mb-2">
+                  <div className="bg-gray-500 h-2 rounded-full animate-pulse"></div>
+                </div>
+                <p className="text-xs text-gray-400">
+                  This may take 5-10 minutes for large batches...
+                </p>
+              </div>
+            )}
+
+            {/* Polling status indicator */}
+            {isPolling && (
+              <div className="mt-4 p-3 bg-blue-900/20 border border-blue-500 rounded-lg">
+                <div className="flex items-center justify-center gap-2">
+                  <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
+                  <span className="text-blue-300 text-sm">Polling for results... (Attempt {pollCount})</span>
+                </div>
+                <p className="text-blue-200 text-xs mt-1">
+                  Last check: {lastPollTime ? new Date(lastPollTime).toLocaleTimeString() : 'Never'}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+        
+        {/* Debug info moved below loading state */}
+        <div className="mt-8">
+          {debugSection}
         </div>
       </div>
     );

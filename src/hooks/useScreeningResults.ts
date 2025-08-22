@@ -125,6 +125,7 @@ export function useScreeningResults(sessionId: string | null, userEmail: string 
           totalBuyRated: latestSessionData.total_buy_rated,
           buyPercentage: latestSessionData.buy_percentage,
           averageScore: latestSessionData.average_score,
+          averageBuyScore: latestSessionData.average_buy_score,
           processingTimeSeconds: latestSessionData.processing_time_seconds,
           createdAt: latestSessionData.created_at,
           completedAt: latestSessionData.completed_at,
@@ -134,44 +135,107 @@ export function useScreeningResults(sessionId: string | null, userEmail: string 
 
         setLatestSession(latestSessionInfo);
 
-        // If latest session is completed, fetch its results
+        // If latest session is completed, fetch its enhanced results
         if (latestSessionData.status === 'completed' || latestSessionData.status === 'replaced') {
-          const { data: latestResultsData, error: latestResultsError } = await supabase
-            .from('screening_results')
-            .select(`
-              symbol,
-              score,
-              rating,
-              price,
-              change_percent,
-              rank_position,
-              score_breakdown,
-              created_at,
-              stock_universe!inner(name, sector)
-            `)
-            .eq('session_id', latestSessionData.id)
-            .order('rank_position', { ascending: true });
-
-          if (!latestResultsError && latestResultsData) {
-            console.log('📈 Latest results found:', latestResultsData.length, 'stocks');
+          const enhancedResultsResponse = await fetch(`/api/stock-screening/enhanced?sessionId=${latestSessionData.id}&userEmail=${encodeURIComponent(userEmail)}&limit=50`);
+          
+          if (enhancedResultsResponse.ok) {
+            const enhancedData = await enhancedResultsResponse.json();
             
-            const transformedLatestResults: ScreeningResultWithSession[] = latestResultsData.map((result: any) => ({
-              symbol: result.symbol,
-              name: result.stock_universe.name,
-              score: result.score,
-              rating: result.rating,
-              price: result.price,
-              changePercent: result.change_percent,
-              sector: result.stock_universe.sector,
-              rankPosition: result.rank_position,
-              scoreBreakdown: result.score_breakdown || {
-                momentum: 0,
-                quality: 0,
-                technical: 0
-              }
-            }));
+            if (enhancedData.success && enhancedData.results) {
+              console.log('📈 Latest enhanced results found:', enhancedData.results.length, 'stocks');
+              setLatestResults(enhancedData.results);
+            } else {
+              console.log('⚠️ Enhanced latest results not available, falling back to basic results');
+              // Fallback to basic results
+              const { data: latestResultsData, error: latestResultsError } = await supabase
+                .from('screening_results')
+                .select(`
+                  symbol,
+                  score,
+                  rating,
+                  price,
+                  change_percent,
+                  rank_position,
+                  score_breakdown,
+                  created_at,
+                  stock_universe!inner(name, sector)
+                `)
+                .eq('session_id', latestSessionData.id)
+                .order('rank_position', { ascending: true });
 
-            setLatestResults(transformedLatestResults);
+              if (!latestResultsError && latestResultsData) {
+                console.log('📈 Latest basic results found:', latestResultsData.length, 'stocks');
+                
+                const transformedLatestResults: ScreeningResultWithSession[] = latestResultsData.map((result: any) => ({
+                  rank: result.rank_position || 0,
+                  symbol: result.symbol,
+                  name: result.stock_universe.name,
+                  score: result.score,
+                  rating: result.rating,
+                  price: result.price,
+                  changePercent: result.change_percent,
+                  sector: result.stock_universe.sector,
+                  rankPosition: result.rank_position,
+                  marketCap: result.market_cap || 0,
+                  peRatio: result.pe_ratio,
+                  week52High: result.week_52_high,
+                  distanceFrom52High: result.distance_from_52_high,
+                  scoreBreakdown: result.score_breakdown || {
+                    momentum: 0,
+                    quality: 0,
+                    technical: 0
+                  }
+                }));
+
+                setLatestResults(transformedLatestResults);
+              }
+            }
+          } else {
+            console.log('⚠️ Enhanced latest results endpoint failed, falling back to basic results');
+            // Fallback to basic results
+            const { data: latestResultsData, error: latestResultsError } = await supabase
+              .from('screening_results')
+              .select(`
+                symbol,
+                score,
+                rating,
+                price,
+                change_percent,
+                rank_position,
+                score_breakdown,
+                created_at,
+                stock_universe!inner(name, sector)
+              `)
+              .eq('session_id', latestSessionData.id)
+              .order('rank_position', { ascending: true });
+
+            if (!latestResultsError && latestResultsData) {
+              console.log('📈 Latest basic results found:', latestResultsData.length, 'stocks');
+              
+                             const transformedLatestResults: ScreeningResultWithSession[] = latestResultsData.map((result: any) => ({
+                 rank: result.rank_position || 0,
+                 symbol: result.symbol,
+                 name: result.stock_universe.name,
+                 score: result.score,
+                 rating: result.rating,
+                 price: result.price,
+                 changePercent: result.change_percent,
+                 sector: result.stock_universe.sector,
+                 rankPosition: result.rank_position,
+                 marketCap: result.market_cap || 0,
+                 peRatio: result.pe_ratio,
+                 week52High: result.week_52_high,
+                 distanceFrom52High: result.distance_from_52_high,
+                 scoreBreakdown: result.score_breakdown || {
+                   momentum: 0,
+                   quality: 0,
+                   technical: 0
+                 }
+               }));
+
+              setLatestResults(transformedLatestResults);
+            }
           }
         }
       }
@@ -198,11 +262,39 @@ export function useScreeningResults(sessionId: string | null, userEmail: string 
 
     if (latestSessionError) {
       console.error('Error fetching latest session:', latestSessionError);
+      // If we can't fetch the session, it might be an n8n error
+      if (attemptCountRef.current > 3) { // After 3 attempts, assume it's an error
+        setError('Unable to fetch screening session. The n8n workflow may have failed to start properly.');
+        setIsPolling(false);
+        setIsLoading(false);
+        if (pollingIntervalRef.current) {
+          clearInterval(pollingIntervalRef.current);
+          pollingIntervalRef.current = null;
+        }
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+          timeoutRef.current = null;
+        }
+      }
       return;
     }
 
     if (!latestSessionData) {
       console.log('No sessions found for user:', userEmail);
+      // If no session found after several attempts, it might be an n8n error
+      if (attemptCountRef.current > 3) {
+        setError('No screening session found. The n8n workflow may have failed to create a session.');
+        setIsPolling(false);
+        setIsLoading(false);
+        if (pollingIntervalRef.current) {
+          clearInterval(pollingIntervalRef.current);
+          pollingIntervalRef.current = null;
+        }
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+          timeoutRef.current = null;
+        }
+      }
       return;
     }
 
@@ -221,6 +313,7 @@ export function useScreeningResults(sessionId: string | null, userEmail: string 
         totalBuyRated: sessionData.total_buy_rated,
         buyPercentage: sessionData.buy_percentage,
         averageScore: sessionData.average_score,
+        averageBuyScore: sessionData.average_buy_score,
         processingTimeSeconds: sessionData.processing_time_seconds,
         createdAt: sessionData.created_at,
         completedAt: sessionData.completed_at,
@@ -230,51 +323,11 @@ export function useScreeningResults(sessionId: string | null, userEmail: string 
 
       setSession(sessionInfo);
 
-      // Always fetch results if they exist, regardless of session status
-      const { data: resultsData, error: resultsError } = await supabase
-        .from('screening_results')
-        .select(`
-          symbol,
-          score,
-          rating,
-          price,
-          change_percent,
-          rank_position,
-          score_breakdown,
-          stock_universe!inner(name, sector)
-        `)
-        .eq('session_id', currentSessionId)
-        .order('rank_position', { ascending: true });
-
-      if (resultsError) {
-        throw new Error(`Failed to fetch results: ${resultsError.message}`);
-      }
-
-      const transformedResults: ScreeningResultWithSession[] = (resultsData || []).map((result: any) => ({
-        symbol: result.symbol,
-        name: result.stock_universe.name,
-        score: result.score,
-        rating: result.rating,
-        price: result.price,
-        changePercent: result.change_percent,
-        sector: result.stock_universe.sector,
-        rankPosition: result.rank_position,
-        scoreBreakdown: result.score_breakdown || {
-          momentum: 0,
-          quality: 0,
-          technical: 0
-        }
-      }));
-
-      setResults(transformedResults);
-      
-      // Update session state with latest data
-      setSession(sessionData);
-      
-      // Handle different session statuses
+      // Check for failed sessions immediately
       if (sessionData.status === 'failed') {
         setError('Screening failed. Please try again.');
         setIsPolling(false);
+        setIsLoading(false);
         if (pollingIntervalRef.current) {
           clearInterval(pollingIntervalRef.current);
           pollingIntervalRef.current = null;
@@ -283,10 +336,118 @@ export function useScreeningResults(sessionId: string | null, userEmail: string 
           clearTimeout(timeoutRef.current);
           timeoutRef.current = null;
         }
-      } else if (transformedResults.length > 0) {
+        return;
+      }
+
+      // Fetch enhanced results from our new API endpoint
+      const enhancedResultsResponse = await fetch(`/api/stock-screening/enhanced?sessionId=${currentSessionId}&userEmail=${encodeURIComponent(userEmail)}&limit=100`);
+      
+      if (enhancedResultsResponse.ok) {
+        const enhancedData = await enhancedResultsResponse.json();
+        
+        if (enhancedData.success && enhancedData.results) {
+          console.log('✅ Fetched enhanced results:', enhancedData.results.length, 'stocks');
+          setResults(enhancedData.results);
+        } else {
+          console.log('⚠️ Enhanced results not available, falling back to basic results');
+          // Fallback to basic results if enhanced endpoint fails
+          const { data: resultsData, error: resultsError } = await supabase
+            .from('screening_results')
+            .select(`
+              symbol,
+              score,
+              rating,
+              price,
+              change_percent,
+              rank_position,
+              score_breakdown,
+              stock_universe!inner(name, sector)
+            `)
+            .eq('session_id', currentSessionId)
+            .order('rank_position', { ascending: true });
+
+          if (resultsError) {
+            throw new Error(`Failed to fetch results: ${resultsError.message}`);
+          }
+
+          const transformedResults: ScreeningResultWithSession[] = (resultsData || []).map((result: any) => ({
+            rank: result.rank_position || 0,
+            symbol: result.symbol,
+            name: result.stock_universe.name,
+            score: result.score,
+            rating: result.rating,
+            price: result.price,
+            changePercent: result.change_percent,
+            sector: result.stock_universe.sector,
+            rankPosition: result.rank_position,
+            marketCap: result.market_cap || 0,
+            peRatio: result.pe_ratio,
+            week52High: result.week_52_high,
+            distanceFrom52High: result.distance_from_52_high,
+            scoreBreakdown: result.score_breakdown || {
+              momentum: 0,
+              quality: 0,
+              technical: 0
+            }
+          }));
+
+          setResults(transformedResults);
+        }
+      } else {
+        console.log('⚠️ Enhanced endpoint failed, falling back to basic results');
+        // Fallback to basic results
+        const { data: resultsData, error: resultsError } = await supabase
+          .from('screening_results')
+          .select(`
+            symbol,
+            score,
+            rating,
+            price,
+            change_percent,
+            rank_position,
+            score_breakdown,
+            stock_universe!inner(name, sector)
+          `)
+          .eq('session_id', currentSessionId)
+          .order('rank_position', { ascending: true });
+
+        if (resultsError) {
+          throw new Error(`Failed to fetch results: ${resultsError.message}`);
+        }
+
+        const transformedResults: ScreeningResultWithSession[] = (resultsData || []).map((result: any) => ({
+          rank: result.rank_position || 0,
+          symbol: result.symbol,
+          name: result.stock_universe.name,
+          score: result.score,
+          rating: result.rating,
+          price: result.price,
+          changePercent: result.change_percent,
+          sector: result.stock_universe.sector,
+          rankPosition: result.rank_position,
+          marketCap: result.market_cap || 0,
+          peRatio: result.pe_ratio,
+          week52High: result.week_52_high,
+          distanceFrom52High: result.distance_from_52_high,
+          scoreBreakdown: result.score_breakdown || {
+            momentum: 0,
+            quality: 0,
+            technical: 0
+          }
+        }));
+
+        setResults(transformedResults);
+      }
+      
+      // Update session state with latest data
+      setSession(sessionData);
+      
+      // Handle different session statuses
+      if (results.length > 0) {
         // Stop polling as soon as we have results, regardless of session status
         console.log('✅ Found results, stopping polling');
         setIsPolling(false);
+        setIsLoading(false);
         if (pollingIntervalRef.current) {
           clearInterval(pollingIntervalRef.current);
           pollingIntervalRef.current = null;
@@ -303,6 +464,7 @@ export function useScreeningResults(sessionId: string | null, userEmail: string 
       const errorMessage = err instanceof Error ? err.message : 'An error occurred while fetching screening status';
       setError(errorMessage);
       setIsPolling(false);
+      setIsLoading(false);
       if (pollingIntervalRef.current) {
         clearInterval(pollingIntervalRef.current);
         pollingIntervalRef.current = null;
@@ -312,7 +474,7 @@ export function useScreeningResults(sessionId: string | null, userEmail: string 
         timeoutRef.current = null;
       }
     }
-  }, [userEmail]);
+  }, [userEmail, results.length]);
 
   const startPolling = useCallback(() => {
     // Start polling if we have either a sessionId prop OR a current session
@@ -337,9 +499,14 @@ export function useScreeningResults(sessionId: string | null, userEmail: string 
       if (attemptCountRef.current >= maxAttempts) {
         setError('Screening timed out after 15 minutes. Please try again.');
         setIsPolling(false);
+        setIsLoading(false);
         if (pollingIntervalRef.current) {
           clearInterval(pollingIntervalRef.current);
           pollingIntervalRef.current = null;
+        }
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+          timeoutRef.current = null;
         }
         return;
       }
@@ -352,6 +519,7 @@ export function useScreeningResults(sessionId: string | null, userEmail: string 
     timeoutRef.current = setTimeout(() => {
       setError('Screening timed out after 15 minutes. Please try again.');
       setIsPolling(false);
+      setIsLoading(false);
       if (pollingIntervalRef.current) {
         clearInterval(pollingIntervalRef.current);
         pollingIntervalRef.current = null;
