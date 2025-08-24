@@ -29,7 +29,18 @@ export function useScreeningResults(sessionId: string | null, userEmail: string 
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const attemptCountRef = useRef(0);
-  const maxAttempts = 90; // 15 minutes with 10-second intervals
+  
+  // Dynamic timeout based on batch size - extend for larger batches
+  const getMaxAttempts = (batchSize?: number) => {
+    if (!batchSize) return 180; // 30 minutes default
+    if (batchSize >= 5000) return 360; // 60 minutes for 5000+ stocks
+    if (batchSize >= 2000) return 300; // 50 minutes for 2000+ stocks
+    if (batchSize >= 1000) return 240; // 40 minutes for 1000+ stocks
+    if (batchSize >= 500) return 180; // 30 minutes for 500+ stocks
+    return 180; // 30 minutes for smaller batches
+  };
+  
+  const maxAttempts = getMaxAttempts();
 
   const checkForRecentSessions = useCallback(async () => {
     if (!userEmail) return;
@@ -62,12 +73,14 @@ export function useScreeningResults(sessionId: string | null, userEmail: string 
           console.log('📋 Found processing session, setting as current:', processingSession.id);
           const newSession = {
             id: processingSession.id,
+            userId: processingSession.user_email, // Use email as userId for now
             userEmail: processingSession.user_email,
             status: processingSession.status,
             totalStocksScreened: processingSession.total_stocks_screened,
             totalBuyRated: processingSession.total_buy_rated,
             buyPercentage: processingSession.buy_percentage,
             averageScore: processingSession.average_score,
+            averageBuyScore: processingSession.average_buy_score || 0,
             processingTimeSeconds: processingSession.processing_time_seconds,
             createdAt: processingSession.created_at,
             completedAt: processingSession.completed_at,
@@ -100,10 +113,25 @@ export function useScreeningResults(sessionId: string | null, userEmail: string 
     console.log('🔍 Fetching latest results for user:', userEmail);
 
     try {
-      // Always fetch the most recent session for this user
+      // Always fetch the most recent session for this user with error details
       const { data: latestSessionData, error: latestSessionError } = await supabase
         .from('user_screening_sessions')
-        .select('*')
+        .select(`
+          id,
+          user_email,
+          status,
+          created_at,
+          completed_at,
+          total_stocks_screened,
+          total_buy_rated,
+          buy_percentage,
+          average_score,
+          average_buy_score,
+          processing_time_seconds,
+          screening_type,
+          filters,
+          session_data
+        `)
         .eq('user_email', userEmail)
         .order('created_at', { ascending: false })
         .limit(1)
@@ -119,6 +147,7 @@ export function useScreeningResults(sessionId: string | null, userEmail: string 
         
         const latestSessionInfo: ScreeningSession = {
           id: latestSessionData.id,
+          userId: latestSessionData.user_email, // Use email as userId for now
           userEmail: latestSessionData.user_email,
           status: latestSessionData.status,
           totalStocksScreened: latestSessionData.total_stocks_screened,
@@ -134,6 +163,37 @@ export function useScreeningResults(sessionId: string | null, userEmail: string 
         };
 
         setLatestSession(latestSessionInfo);
+
+        // Check for failed sessions and extract error details
+        if (latestSessionData.status === 'failed') {
+          let errorMessage = 'Screening failed. Please try again.';
+          
+          // Extract error details from session_data if available
+          if (latestSessionData.session_data) {
+            try {
+              const sessionDataObj = typeof latestSessionData.session_data === 'string' 
+                ? JSON.parse(latestSessionData.session_data) 
+                : latestSessionData.session_data;
+              
+              if (sessionDataObj.error_message) {
+                errorMessage = `Screening failed: ${sessionDataObj.error_message}`;
+              } else if (sessionDataObj.error) {
+                errorMessage = `Screening failed: ${sessionDataObj.error}`;
+              }
+              
+              // Add additional context if available
+              if (sessionDataObj.failed_at) {
+                errorMessage += ` (Failed at: ${new Date(sessionDataObj.failed_at).toLocaleString()})`;
+              }
+            } catch (parseError) {
+              console.error('Error parsing session_data:', parseError);
+            }
+          }
+          
+          console.log('❌ Latest session failed with error:', errorMessage);
+          setError(errorMessage);
+          return;
+        }
 
         // If latest session is completed, fetch its enhanced results
         if (latestSessionData.status === 'completed' || latestSessionData.status === 'replaced') {
@@ -213,26 +273,26 @@ export function useScreeningResults(sessionId: string | null, userEmail: string 
             if (!latestResultsError && latestResultsData) {
               console.log('📈 Latest basic results found:', latestResultsData.length, 'stocks');
               
-                             const transformedLatestResults: ScreeningResultWithSession[] = latestResultsData.map((result: any) => ({
-                 rank: result.rank_position || 0,
-                 symbol: result.symbol,
-                 name: result.stock_universe.name,
-                 score: result.score,
-                 rating: result.rating,
-                 price: result.price,
-                 changePercent: result.change_percent,
-                 sector: result.stock_universe.sector,
-                 rankPosition: result.rank_position,
-                 marketCap: result.market_cap || 0,
-                 peRatio: result.pe_ratio,
-                 week52High: result.week_52_high,
-                 distanceFrom52High: result.distance_from_52_high,
-                 scoreBreakdown: result.score_breakdown || {
-                   momentum: 0,
-                   quality: 0,
-                   technical: 0
-                 }
-               }));
+              const transformedLatestResults: ScreeningResultWithSession[] = latestResultsData.map((result: any) => ({
+                rank: result.rank_position || 0,
+                symbol: result.symbol,
+                name: result.stock_universe.name,
+                score: result.score,
+                rating: result.rating,
+                price: result.price,
+                changePercent: result.change_percent,
+                sector: result.stock_universe.sector,
+                rankPosition: result.rank_position,
+                marketCap: result.market_cap || 0,
+                peRatio: result.pe_ratio,
+                week52High: result.week_52_high,
+                distanceFrom52High: result.distance_from_52_high,
+                scoreBreakdown: result.score_breakdown || {
+                  momentum: 0,
+                  quality: 0,
+                  technical: 0
+                }
+              }));
 
               setLatestResults(transformedLatestResults);
             }
@@ -251,10 +311,25 @@ export function useScreeningResults(sessionId: string | null, userEmail: string 
     setLastPollTime(currentTime);
     setPollCount(prev => prev + 1);
 
-    // Always get the most recent session for this user
+    // Always get the most recent session for this user with error details
     const { data: latestSessionData, error: latestSessionError } = await supabase
       .from('user_screening_sessions')
-      .select('*')
+      .select(`
+        id,
+        user_email,
+        status,
+        created_at,
+        completed_at,
+        total_stocks_screened,
+        total_buy_rated,
+        buy_percentage,
+        average_score,
+        average_buy_score,
+        processing_time_seconds,
+        screening_type,
+        filters,
+        session_data
+      `)
       .eq('user_email', userEmail)
       .order('created_at', { ascending: false })
       .limit(1)
@@ -299,7 +374,7 @@ export function useScreeningResults(sessionId: string | null, userEmail: string 
     }
 
     const currentSessionId = latestSessionData.id;
-    console.log(`🔄 Polling attempt ${attemptCountRef.current + 1} for session:`, currentSessionId);
+    console.log(`🔄 Polling attempt ${attemptCountRef.current + 1} for session:`, currentSessionId, 'Status:', latestSessionData.status);
 
     try {
       // Use the latest session data we already fetched
@@ -307,6 +382,7 @@ export function useScreeningResults(sessionId: string | null, userEmail: string 
 
       const sessionInfo: ScreeningSession = {
         id: sessionData.id,
+        userId: sessionData.user_email, // Use email as userId for now
         userEmail: sessionData.user_email,
         status: sessionData.status,
         totalStocksScreened: sessionData.total_stocks_screened,
@@ -323,9 +399,34 @@ export function useScreeningResults(sessionId: string | null, userEmail: string 
 
       setSession(sessionInfo);
 
-      // Check for failed sessions immediately
+      // Check for failed sessions immediately and extract error details
       if (sessionData.status === 'failed') {
-        setError('Screening failed. Please try again.');
+        let errorMessage = 'Screening failed. Please try again.';
+        
+        // Extract error details from session_data if available
+        if (sessionData.session_data) {
+          try {
+            const sessionDataObj = typeof sessionData.session_data === 'string' 
+              ? JSON.parse(sessionData.session_data) 
+              : sessionData.session_data;
+            
+            if (sessionDataObj.error_message) {
+              errorMessage = `Screening failed: ${sessionDataObj.error_message}`;
+            } else if (sessionDataObj.error) {
+              errorMessage = `Screening failed: ${sessionDataObj.error}`;
+            }
+            
+            // Add additional context if available
+            if (sessionDataObj.failed_at) {
+              errorMessage += ` (Failed at: ${new Date(sessionDataObj.failed_at).toLocaleString()})`;
+            }
+          } catch (parseError) {
+            console.error('Error parsing session_data:', parseError);
+          }
+        }
+        
+        console.log('❌ Session failed with error:', errorMessage);
+        setError(errorMessage);
         setIsPolling(false);
         setIsLoading(false);
         if (pollingIntervalRef.current) {
@@ -440,7 +541,7 @@ export function useScreeningResults(sessionId: string | null, userEmail: string 
       }
       
       // Update session state with latest data
-      setSession(sessionData);
+      setSession(sessionInfo);
       
       // Handle different session statuses
       if (results.length > 0) {
@@ -488,6 +589,13 @@ export function useScreeningResults(sessionId: string | null, userEmail: string 
     attemptCountRef.current = 0;
     setPollCount(0);
 
+    // Get batch size from session or use default for timeout calculation
+    const batchSize = session?.totalStocksScreened || 500;
+    const dynamicMaxAttempts = getMaxAttempts(batchSize);
+    const timeoutMinutes = Math.ceil(dynamicMaxAttempts / 6); // 6 attempts per minute
+
+    console.log(`⏱️ Using dynamic timeout: ${timeoutMinutes} minutes for ${batchSize} stocks`);
+
     // Initial fetch - get both current session and latest results
     fetchSessionStatus();
     fetchLatestResults();
@@ -496,8 +604,8 @@ export function useScreeningResults(sessionId: string | null, userEmail: string 
     pollingIntervalRef.current = setInterval(() => {
       attemptCountRef.current++;
       
-      if (attemptCountRef.current >= maxAttempts) {
-        setError('Screening timed out after 15 minutes. Please try again.');
+      if (attemptCountRef.current >= dynamicMaxAttempts) {
+        setError(`Screening timed out after ${timeoutMinutes} minutes. Please try again.`);
         setIsPolling(false);
         setIsLoading(false);
         if (pollingIntervalRef.current) {
@@ -515,18 +623,18 @@ export function useScreeningResults(sessionId: string | null, userEmail: string 
       fetchLatestResults(); // Always check for latest results too
     }, 10000); // 10 seconds
 
-    // Set up timeout (15 minutes)
+    // Set up dynamic timeout
     timeoutRef.current = setTimeout(() => {
-      setError('Screening timed out after 15 minutes. Please try again.');
+      setError(`Screening timed out after ${timeoutMinutes} minutes. Please try again.`);
       setIsPolling(false);
       setIsLoading(false);
       if (pollingIntervalRef.current) {
         clearInterval(pollingIntervalRef.current);
         pollingIntervalRef.current = null;
       }
-    }, 15 * 60 * 1000); // 15 minutes
+    }, timeoutMinutes * 60 * 1000);
 
-  }, [sessionId, userEmail, fetchSessionStatus, maxAttempts]);
+  }, [sessionId, userEmail, fetchSessionStatus, session?.totalStocksScreened]);
 
   const retry = useCallback(() => {
     setError(null);

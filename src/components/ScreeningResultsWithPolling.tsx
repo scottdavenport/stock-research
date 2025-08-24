@@ -6,6 +6,8 @@ import { ScreeningSession, ScreeningResultWithSession } from '../types/stock';
 import LoadingSpinner from './LoadingSpinner';
 import WatchListButton from './WatchListButton';
 import AutoSuggestionModal from './AutoSuggestionModal';
+import ProcessingBanner from './ProcessingBanner';
+import EducationalContent from './EducationalContent';
 import { useWatchlist } from '../hooks/useWatchlist';
 
 interface ScreeningResultsWithPollingProps {
@@ -360,14 +362,14 @@ export default function ScreeningResultsWithPolling({ sessionId, userEmail }: Sc
     );
   };
 
-  // Always show debugging info at the top
+  // Consolidated debug info - one compact component
   const debugSection = (
     <div className="bg-gray-900 border border-gray-600 rounded-lg p-4 mb-6">
-      <h3 className="text-sm font-semibold text-purple-400 mb-3">🔍 Polling Debug Info</h3>
+      <h3 className="text-sm font-semibold text-purple-400 mb-3">🔍 Debug Info</h3>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
         <div>
-          <span className="text-gray-400">Current Session:</span>
-          <p className="text-white font-mono">{sessionId || 'None'}</p>
+          <span className="text-gray-400">Session ID:</span>
+          <p className="text-white font-mono text-xs break-all">{sessionId || 'None'}</p>
         </div>
         <div>
           <span className="text-gray-400">Poll Count:</span>
@@ -383,62 +385,29 @@ export default function ScreeningResultsWithPolling({ sessionId, userEmail }: Sc
             {isPolling ? '🟢 Active' : '🔴 Inactive'}
           </p>
         </div>
+        <div>
+          <span className="text-gray-400">Workflow Status:</span>
+          <p className={`font-semibold ${
+            session?.status === 'completed' ? 'text-green-400' : 
+            session?.status === 'processing' || session?.status === 'running' || session?.status === 'pending' ? 'text-yellow-400' : 
+            session?.status === 'failed' ? 'text-red-400' : 'text-gray-400'
+          }`}>
+            {session?.status?.toUpperCase() || 'UNKNOWN'}
+          </p>
+        </div>
+        <div>
+          <span className="text-gray-400">Created:</span>
+          <p className="text-white">{session?.createdAt ? new Date(session.createdAt).toLocaleString() : 'N/A'}</p>
+        </div>
+        <div>
+          <span className="text-gray-400">Processing Time:</span>
+          <p className="text-white">{session?.processingTimeSeconds ? formatTime(session.processingTimeSeconds) : 'N/A'}</p>
+        </div>
+        <div>
+          <span className="text-gray-400">Results:</span>
+          <p className="text-white">{results.length > 0 ? `${results.length} stocks` : 'None'}</p>
+        </div>
       </div>
-      
-      {latestSession ? (
-        <div className="mt-4 pt-4 border-t border-gray-700">
-          <h4 className="text-sm font-semibold text-blue-400 mb-2">📊 Latest Session for {userEmail}</h4>
-          <div className="grid grid-cols-2 md:grid-cols-6 gap-4 text-xs">
-            <div>
-              <span className="text-gray-400">Session ID:</span>
-              <p className="text-white font-mono text-xs">{latestSession.id.slice(0, 8)}...</p>
-            </div>
-            <div>
-              <span className="text-gray-400">Status:</span>
-              <p className={`font-semibold ${
-                latestSession.status === 'completed' ? 'text-green-400' : 
-                latestSession.status === 'processing' || latestSession.status === 'running' ? 'text-yellow-400' : 
-                latestSession.status === 'failed' ? 'text-red-400' : 'text-gray-400'
-              }`}>
-                {latestSession.status.toUpperCase()}
-              </p>
-            </div>
-            <div>
-              <span className="text-gray-400">Created:</span>
-              <p className="text-white">{new Date(latestSession.createdAt).toLocaleString()}</p>
-            </div>
-            <div>
-              <span className="text-gray-400">Stocks:</span>
-              <p className="text-white">{latestSession.totalStocksScreened}</p>
-            </div>
-            <div>
-              <span className="text-gray-400">Buy Rated:</span>
-              <p className="text-green-400">{latestSession.totalBuyRated}</p>
-            </div>
-            <div>
-              <span className="text-gray-400">Avg Score:</span>
-              <p className="text-blue-400">{latestSession.averageScore.toFixed(1)}</p>
-            </div>
-          </div>
-          
-          {latestResults.length > 0 && (
-            <div className="mt-3">
-              <span className="text-gray-400 text-xs">Latest Results:</span>
-              <p className="text-white font-semibold">{latestResults.length} stocks available</p>
-            </div>
-          )}
-        </div>
-      ) : (
-        <div className="mt-4 pt-4 border-t border-gray-700">
-          <h4 className="text-sm font-semibold text-red-400 mb-2">⚠️ Database Access Issue</h4>
-          <p className="text-xs text-red-300">
-            Unable to access screening sessions. This may be due to missing database permissions.
-          </p>
-          <p className="text-xs text-gray-400 mt-1">
-            Check the console for detailed error information.
-          </p>
-        </div>
-      )}
     </div>
   );
 
@@ -518,60 +487,40 @@ export default function ScreeningResultsWithPolling({ sessionId, userEmail }: Sc
     );
   }
 
-  // Loading/Polling State - Only show spinner if no results are available and no errors
-  if ((isLoading || isPolling) && results.length === 0 && latestResults.length === 0) {
-    return (
-      <div>
-        <div className="bg-gray-800 rounded-lg p-8 border border-gray-700">
-          <div className="text-center">
-            <div className="flex justify-center mb-4">
-              <LoadingSpinner size="large" />
-            </div>
-            <h2 className="text-xl font-bold text-white mt-4 mb-2">
-              {session?.status === 'completed' ? 'Loading Results...' : 'Screening in Progress'}
-            </h2>
-            <p className="text-gray-400 mb-4">
-              {session ? getProgressMessage(session.status) : 'Initializing...'}
-            </p>
-            
-            {session && (
-              <div className="space-y-2 text-sm text-gray-300">
-                <p>Session ID: {session.id}</p>
-                <p>Started: {session.createdAt ? new Date(session.createdAt).toLocaleString() : 'Initializing...'}</p>
-                {session.processingTimeSeconds > 0 && (
-                  <p>Processing time: {formatTime(session.processingTimeSeconds)}</p>
-                )}
-              </div>
-            )}
-
-            {/* Progress indicator for processing */}
-            {(session?.status === 'processing' || session?.status === 'running') && (
-              <div className="mt-6">
-                <div className="w-full bg-gray-700 rounded-full h-2 mb-2">
-                  <div className="bg-gray-500 h-2 rounded-full animate-pulse"></div>
-                </div>
-                <p className="text-xs text-gray-400">
-                  This may take 5-10 minutes for large batches...
-                </p>
-              </div>
-            )}
-
-            {/* Polling status indicator */}
-            {isPolling && (
-              <div className="mt-4 p-3 bg-blue-900/20 border border-blue-500 rounded-lg">
-                <div className="flex items-center justify-center gap-2">
-                  <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
-                  <span className="text-blue-300 text-sm">Polling for results... (Attempt {pollCount})</span>
-                </div>
-                <p className="text-blue-200 text-xs mt-1">
-                  Last check: {lastPollTime ? new Date(lastPollTime).toLocaleTimeString() : 'Never'}
-                </p>
-              </div>
-            )}
+  // New UX Flow: Show existing results with processing banner OR educational content
+  if (isLoading || isPolling) {
+    // If user has existing results, show them with processing banner
+    if (latestResults.length > 0) {
+      return (
+        <div>
+          {/* Processing Banner */}
+          <ProcessingBanner 
+            batchSize={session?.totalStocksScreened || 500}
+            estimatedTime=""
+            startedAt={session?.createdAt || new Date().toISOString()}
+          />
+          
+          {/* Show existing results */}
+          {renderResults(latestResults, latestSession)}
+          
+          {/* Debug info */}
+          <div className="mt-8">
+            {debugSection}
           </div>
         </div>
+      );
+    }
+    
+    // If no existing results, show educational content
+    return (
+      <div>
+        <EducationalContent 
+          batchSize={session?.totalStocksScreened || 500}
+          estimatedTime=""
+          startedAt={session?.createdAt || new Date().toISOString()}
+        />
         
-        {/* Debug info moved below loading state */}
+        {/* Debug info */}
         <div className="mt-8">
           {debugSection}
         </div>

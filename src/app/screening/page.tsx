@@ -12,6 +12,8 @@ export default function ScreeningPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [submittedFormData, setSubmittedFormData] = useState<ScreeningFormData | null>(null);
   const { user } = useAuth();
 
   const handleSubmit = async (formData: ScreeningFormData) => {
@@ -26,6 +28,7 @@ export default function ScreeningPage() {
     setIsLoading(true);
     setError(null);
     setSessionId(null);
+    setSuccessMessage(null);
 
     try {
       console.log('Calling screenStocks API with user email:', user.email);
@@ -36,6 +39,19 @@ export default function ScreeningPage() {
         console.log('Screening session created successfully:', response.sessionId);
         console.log('🔧 Setting sessionId in page component:', response.sessionId);
         setSessionId(response.sessionId);
+        setSubmittedFormData(formData);
+        
+        // Show immediate success message with estimated time
+        const getEstimatedTime = (batchSize: number) => {
+          if (batchSize >= 5000) return '25-30 minutes';
+          if (batchSize >= 2000) return '15-20 minutes';
+          if (batchSize >= 1000) return '10-15 minutes';
+          if (batchSize >= 500) return '5-10 minutes';
+          return '2-5 minutes';
+        };
+        
+        const estimatedTime = getEstimatedTime(formData.batchSize || 500);
+        setSuccessMessage(`Screening submitted successfully! We're analyzing ${formData.batchSize} stocks. Estimated completion: ${estimatedTime}. We'll notify you when it's ready.`);
       } else {
         console.log('Screening session creation failed:', response.error);
         setError(response.error || 'Failed to create screening session');
@@ -94,6 +110,24 @@ export default function ScreeningPage() {
               <ScreeningForm onSubmit={handleSubmit} isLoading={isLoading} />
             </div>
 
+            {/* Success State */}
+            {successMessage && (
+              <div className="mt-8 bg-green-900/20 border border-green-500 rounded-lg p-6">
+                <div className="flex items-start">
+                  <div className="text-green-400 text-lg mr-3 mt-0.5">✅</div>
+                  <div className="flex-1">
+                    <h3 className="text-green-400 font-semibold mb-2">Screening Submitted Successfully</h3>
+                    <p className="text-green-300 mb-4">{successMessage}</p>
+                    <div className="text-green-200/70 text-sm">
+                      <p>• You can continue using the app while we process your screening</p>
+                      <p>• We'll notify you when the results are ready</p>
+                      <p>• You can also check the results section below for updates</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Error State */}
             {error && !isLoading && (
               <div className="mt-8 bg-red-900/20 border border-red-500 rounded-lg p-6">
@@ -132,7 +166,7 @@ export default function ScreeningPage() {
                 <div className="text-xs text-gray-500 mb-2">
                   Debug: sessionId = {sessionId || 'null'}, userEmail = {user.email}
                 </div>
-                <ScreeningResultsWithPolling sessionId={sessionId} userEmail={user.email} />
+                <ScreeningResultsWithPolling sessionId={sessionId || ''} userEmail={user.email} />
               </div>
             )}
           </div>

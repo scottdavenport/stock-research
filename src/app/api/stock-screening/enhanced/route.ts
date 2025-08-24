@@ -133,7 +133,7 @@ export async function GET(request: NextRequest) {
     }, {} as Record<string, number>);
     
     const topSector = Object.entries(sectorCounts)
-      .sort(([,a], [,b]) => b - a)[0]?.[0] || 'N/A';
+      .sort(([,a], [,b]) => (b as number) - (a as number))[0]?.[0] || 'N/A';
 
     const response = {
       success: true,

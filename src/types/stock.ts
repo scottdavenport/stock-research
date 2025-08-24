@@ -96,6 +96,7 @@ export interface ScreeningResult {
     momentum: number;
     quality: number;
     technical: number;
+    [key: string]: number;
   };
   
   // Enhanced data from database
@@ -120,12 +121,6 @@ export interface ScreeningResult {
   priceRelative13w?: number;
   
   // Detailed analysis data
-  scoreBreakdown?: {
-    momentum: number;
-    quality: number;
-    technical: number;
-    [key: string]: number;
-  };
   technicals?: {
     [key: string]: any;
   };
@@ -168,36 +163,7 @@ export interface ScreeningFormData {
 // New interfaces for session tracking
 export interface ScreeningSession {
   id: string;
-  userId: string;
-  userEmail: string;
-  screeningType: string;
-  filters: Record<string, unknown>;
-  totalStocksScreened: number;
-  totalBuyRated: number;
-  buyPercentage: number;
-  averageScore: number;
-  averageBuyScore: number;
-  processingTimeSeconds: number;
-  status: 'running' | 'completed' | 'failed';
-  createdAt: string;
-  completedAt?: string;
-  sessionData?: Record<string, unknown>;
-}
-
-export interface ScreeningResultWithSession extends ScreeningResult {
-  sessionId?: string;
-  userId?: string;
-}
-
-export interface ScreeningResponseWithSession extends ScreeningResponse {
-  sessionId?: string;
-  userEmail?: string;
-  session?: ScreeningSession;
-}
-
-// New interfaces for session-based screening (from cursor polling prompt)
-export interface ScreeningSession {
-  id: string;
+  userId?: string; // Make optional since we're using email as userId
   userEmail: string;
   status: 'pending' | 'processing' | 'running' | 'completed' | 'failed' | 'replaced';
   totalStocksScreened: number;
@@ -210,27 +176,12 @@ export interface ScreeningSession {
   completedAt?: string;
   screeningType?: string;
   filters?: Record<string, unknown>;
+  sessionData?: Record<string, unknown>;
 }
 
-export interface ScreeningResultWithSession {
-  rank: number;
-  symbol: string;
-  name: string;
-  score: number;
-  rating: 'STRONG BUY' | 'BUY' | 'WEAK BUY' | 'HOLD' | 'WEAK SELL' | 'SELL' | 'STRONG SELL';
-  price: number;
-  changePercent: number;
-  sector: string;
-  rankPosition: number;
-  marketCap: number;
-  peRatio: number | null;
-  week52High: number | null;
-  distanceFrom52High: string | null;
-  scoreBreakdown: {
-    momentum: number;
-    quality: number;
-    technical: number;
-  };
+export interface ScreeningResultWithSession extends ScreeningResult {
+  sessionId?: string;
+  userId?: string;
   
   // Enhanced fields from database
   signalStrength?: number;
@@ -259,11 +210,18 @@ export interface ScreeningResultWithSession {
   recommendations?: Record<string, any>;
 }
 
+export interface ScreeningResponseWithSession extends ScreeningResponse {
+  sessionId?: string;
+  userEmail?: string;
+  session?: ScreeningSession;
+}
+
 export interface ScreeningSessionResponse {
   success: boolean;
   sessionId: string | null;
   status: 'pending' | 'processing' | 'completed' | 'failed';
   message?: string;
+  error?: string;
   timestamp: string;
   results?: ScreeningResultWithSession[];
   summary?: ScreeningSummary;

@@ -7,7 +7,7 @@ import WatchListButton from '../../components/WatchListButton';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import { useRouter } from 'next/navigation';
 
-type SortField = 'symbol' | 'score' | 'price' | 'change' | 'added_at';
+type SortField = 'symbol' | 'latest_score' | 'latest_price' | 'latest_change_percent' | 'added_at';
 type SortDirection = 'asc' | 'desc';
 
 export default function WatchListPage() {
@@ -318,11 +318,11 @@ export default function WatchListPage() {
                     <th className="px-4 py-3 text-left">Sector</th>
                     <th 
                       className="px-4 py-3 text-left cursor-pointer hover:text-purple-400 transition-colors"
-                      onClick={() => handleSort('score')}
+                      onClick={() => handleSort('latest_score')}
                     >
                       <div className="flex items-center gap-1">
                         Score
-                        {sortField === 'score' && (
+                        {sortField === 'latest_score' && (
                           <span>{sortDirection === 'asc' ? '↑' : '↓'}</span>
                         )}
                       </div>
@@ -330,22 +330,22 @@ export default function WatchListPage() {
                     <th className="px-4 py-3 text-left">Rating</th>
                     <th 
                       className="px-4 py-3 text-left cursor-pointer hover:text-purple-400 transition-colors"
-                      onClick={() => handleSort('price')}
+                      onClick={() => handleSort('latest_price')}
                     >
                       <div className="flex items-center gap-1">
                         Price
-                        {sortField === 'price' && (
+                        {sortField === 'latest_price' && (
                           <span>{sortDirection === 'asc' ? '↑' : '↓'}</span>
                         )}
                       </div>
                     </th>
                     <th 
                       className="px-4 py-3 text-left cursor-pointer hover:text-purple-400 transition-colors"
-                      onClick={() => handleSort('change')}
+                      onClick={() => handleSort('latest_change_percent')}
                     >
                       <div className="flex items-center gap-1">
                         Change %
-                        {sortField === 'change' && (
+                        {sortField === 'latest_change_percent' && (
                           <span>{sortDirection === 'asc' ? '↑' : '↓'}</span>
                         )}
                       </div>
